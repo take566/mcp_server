@@ -36,7 +36,6 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     },
-
     "mcp-obsidian": {
       "command": "cmd",
       "args": [
@@ -47,7 +46,74 @@
         "run",
         "mcp-obsidian",
         "--config",
-        "\"{\\\"vaultPath\\\":\\\"C:\\\\\\\\work\\\\\\\\Obsidian\\\\\\\\Obsidian\\\"}\""
+        "\"{\\\"vaultPath\\\":\\\"D:\\work\\Obsidian\\Obsidian\\\"}\""
+      ]
+    },
+    "toolbox": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@smithery/toolbox",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3",
+        "--profile",
+        "dizzy-echidna-X0paey"
+      ]
+    },
+    "playwright-mcp-server": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@showfive/playwright-mcp-server",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3"
+      ]
+    },
+    "memory-mcp": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@drdee/memory-mcp",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3"
+      ]
+    },
+    "code-mcp": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@block/code-mcp",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3"
+      ]
+    },
+    "smart-thinking": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@Leghis/smart-thinking",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3"
       ]
     }
   }

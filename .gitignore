@@ -2,7 +2,7 @@
 .env
 
 # Configuration files with secrets
-win_config/claude_desktop_config.json
+
 
 # Logs
 *.log
