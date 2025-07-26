@@ -112,3 +112,45 @@ Configuration examples are available in `/win_config/claude_desktop_config.json`
 - `@types/node` - Node.js TypeScript definitions
 - `typescript` - TypeScript compiler
 - Individual servers have specialized dependencies (Playwright, Kubernetes client, etc.)
+
+## インストール完了！
+
+**Google Analytics MCPサーバー**が正常にインストールされました。
+
+### インストール内容：
+1. ✅ リポジトリのクローン
+2. ✅ 依存関係のインストール
+3. ✅ TypeScriptのビルド
+4. ✅ Claude Desktop設定ファイルの更新
+
+### 次のステップ（使用するために必要な設定）：
+
+Google Analytics MCPサーバーを使用するには、以下の環境変数を設定する必要があります：
+
+1. **Google Cloudプロジェクトのセットアップ**
+   - Google Cloudプロジェクトを作成
+   - Google Analytics Data APIを有効化
+
+2. **サービスアカウントの作成**
+   - サービスアカウントを作成
+   - JSONキーファイルをダウンロード
+
+3. **Google Analyticsでのアクセス権設定**
+   - GA4プロパティIDの確認
+   - サービスアカウントにアクセス権を付与
+
+4. **環境変数の設定**
+   ```bash
+   export GOOGLE_CLIENT_EMAIL="your-service-account@project.iam.gserviceaccount.com"
+   export GOOGLE_PRIVATE_KEY="your-private-key"
+   export GA_PROPERTY_ID="your-ga4-property-id"
+   ```
+
+### 利用可能な機能：
+- **get_report**: 指定した日付範囲、メトリクス、ディメンションに基づいてレポートを取得
+- **get_realtime_data**: リアルタイムデータを取得
+- **ga4://property/{propertyId}/metadata**: Google Analyticsプロパティのメタデータにアクセス
+
+詳細なセットアップ手順は `google-analytics-mcp/docs/setup-guide.md` に記載されています。
+
+Claude Desktopを再起動すると、Google Analytics MCPサーバーが利用可能になります（環境変数を設定した後）。
