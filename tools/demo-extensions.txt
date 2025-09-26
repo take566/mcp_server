@@ -1,0 +1,13 @@
+ms-python.python
+ms-vscode.vscode-typescript-next
+bradlc.vscode-tailwindcss
+esbenp.prettier-vscode
+ms-vscode.vscode-json
+ms-vscode-remote.remote-ssh
+GitHubCopilot.github-copilot
+ms-vscode.powershell
+ms-dotnettools.csharp
+redhat.java
+ms-vscode.cmake-tools
+
+
