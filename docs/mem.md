@@ -9,5 +9,6 @@ claude mcp add -s project gemini-cli -- npx @choplin/mcp-gemini-cli --allow-npx
 claude mcp add playwright -s project -- npx -y @playwright/mcp@latest
 claude mcp add markitdown -s project -- uvx markitdown-mcp
 claude mcp add context7 -s project -- npx -y @upstash/context7-mcp
-claude mcp add -s project chrome-devtools-mcp -- npx @chrome-devtools-mcp@latest --allow-npx
+claude mcp add chrome-devtools npx chrome-devtools-mcp@latest
+
 
