@@ -1,5 +1,5 @@
 [mcp_servers.chrome-devtools]
 type = "stdio"
 command = "npx"
-args = ["chrome-devtools-mcp@latest"]
+args = ["chrome-devtools-mcp@latest", "--isolated", "--headless"]
 description = "Chrome DevTools MCP: run performance traces, inspect the DOM, and perform real-time debugging of your web pages — useful for browser automation, end-to-end testing, and capturing page artifacts."

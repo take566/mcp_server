@@ -1,0 +1,150 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\tmf58\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
+        "D:\\work\\"
+      ]
+    },
+    "brave-search": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\tmf58\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-brave-search\\dist\\index.js"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "notionApi": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "env": {
+        "OPENAPI_MCP_HEADERS": "${OPENAPI_MCP_HEADERS}"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "mcp-obsidian": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "mcp-obsidian",
+        "--config",
+        "\"{\\\"vaultPath\\\":\\\"D:\\work\\Obsidian\\Obsidian\\\"}\""
+      ]
+    },
+    "toolbox": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@smithery/toolbox",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3",
+        "--profile",
+        "dizzy-echidna-X0paey"
+      ]
+    },
+    "playwright-mcp-server": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@showfive/playwright-mcp-server",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3"
+      ]
+    },
+    "memory-mcp": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@drdee/memory-mcp",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3"
+      ]
+    },
+    "code-mcp": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@block/code-mcp",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3"
+      ]
+    },
+    "mcpServers": {
+        "context7": {
+          "command": "npx",
+          "args": ["--yes", "@upstash/context7-mcp"],
+          "env": {}
+        },
+        "serena": {
+          "command": "uv",
+          "args": [
+            "run", 
+            "serena-mcp-server",
+            "--port",
+            "32123"
+          ],
+          "cwd": "${workspaceFolder}/serena",
+          "port": 32123,
+          "env": {
+            "SERENA_PROJECT_PATH": "${workspaceFolder}"
+          }
+        },
+        "cipher": {
+          "command": "cipher",
+          "args": ["--mode", "mcp"],
+          "env": {
+            "CIPHER_WORKSPACE": "${workspaceFolder}/.cipher",
+            "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+            "CIPHER_EMBEDDER": "local"
+          }
+        }
+    },
+    "smart-thinking": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@Leghis/smart-thinking",
+        "--key",
+        "cf195fad-d0a4-4e8a-924b-857d744731b3"
+      ]
+    }
+  }
+}
