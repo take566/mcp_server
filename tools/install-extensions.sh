@@ -33,7 +33,7 @@ if [[ $total -eq 0 ]]; then
     exit 1
 fi
 
-echo "📦 ${total}個の拡張機能をインストールします..."
+echo " ${total}個の拡張機能をインストールします..."
 echo
 
 # インストール処理
@@ -50,10 +50,10 @@ while IFS= read -r extension; do
     echo "[$count/$total] インストール中: $extension"
     
     if code --install-extension "$extension" > /dev/null 2>&1; then
-        echo "  ✅ 成功"
+        echo "   成功"
         ((success++))
     else
-        echo "  ❌ 失敗"
+        echo "   失敗"
         ((failed++))
         failed_extensions+=("$extension")
     fi
@@ -62,13 +62,13 @@ done < "$extensions_file"
 
 # 結果表示
 echo "================================"
-echo "📊 インストール結果:"
+echo " インストール結果:"
 echo "  成功: $success/$total"
 echo "  失敗: $failed/$total"
 
 if [[ $failed -gt 0 ]]; then
     echo
-    echo "⚠️  失敗した拡張機能:"
+    echo "  失敗した拡張機能:"
     printf '%s\n' "${failed_extensions[@]}" > failed-extensions.txt
     for ext in "${failed_extensions[@]}"; do
         echo "    - $ext"

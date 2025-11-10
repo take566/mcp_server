@@ -25,14 +25,14 @@ try {
 }
 
 # 出力結果を表示
-Write-Host "✅ 拡張機能リストを vscode-extensions.txt に出力しました" -ForegroundColor Green
+Write-Host " 拡張機能リストを vscode-extensions.txt に出力しました" -ForegroundColor Green
 Write-Host
-Write-Host "📁 ファイル位置: $((Get-Location).Path)\vscode-extensions.txt" -ForegroundColor Cyan
+Write-Host " ファイル位置: $((Get-Location).Path)\vscode-extensions.txt" -ForegroundColor Cyan
 Write-Host
 
 # 拡張機能の数を表示
 $count = (Get-Content "vscode-extensions.txt" | Where-Object { $_.Trim() -ne "" }).Count
-Write-Host "📦 出力された拡張機能数: $count 個" -ForegroundColor Yellow
+Write-Host " 出力された拡張機能数: $count 個" -ForegroundColor Yellow
 Write-Host
 
 # 内容確認の選択肢

@@ -32,7 +32,7 @@ schtasks /create /tn "MCP設定バックアップ" /xml "%TASK_XML%"
 
 if %errorLevel% == 0 (
     echo.
-    echo ✓ MCP設定バックアップタスクが正常にインストールされました！
+    echo  MCP設定バックアップタスクが正常にインストールされました！
     echo.
     echo 設定内容:
     echo - 毎日午前9時に自動実行
@@ -48,7 +48,7 @@ if %errorLevel% == 0 (
     echo.
 ) else (
     echo.
-    echo ✗ エラー: タスクのインストールに失敗しました。
+    echo  エラー: タスクのインストールに失敗しました。
     echo XMLファイルのパスを確認してください: %TASK_XML%
     echo.
 )

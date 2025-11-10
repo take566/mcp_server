@@ -21,14 +21,14 @@ if ! code --list-extensions > vscode-extensions.txt; then
 fi
 
 # 出力結果を表示
-echo "✅ 拡張機能リストを vscode-extensions.txt に出力しました"
+echo " 拡張機能リストを vscode-extensions.txt に出力しました"
 echo
-echo "📁 ファイル位置: $(pwd)/vscode-extensions.txt"
+echo " ファイル位置: $(pwd)/vscode-extensions.txt"
 echo
 
 # 拡張機能の数を表示
 count=$(wc -l < vscode-extensions.txt | tr -d ' ')
-echo "📦 出力された拡張機能数: ${count}個"
+echo " 出力された拡張機能数: ${count}個"
 echo
 
 # 内容確認の選択肢

@@ -24,14 +24,14 @@ if %ERRORLEVEL% neq 0 (
 )
 
 REM 出力結果を表示
-echo ✅ 拡張機能リストを vscode-extensions.txt に出力しました
+echo  拡張機能リストを vscode-extensions.txt に出力しました
 echo.
-echo 📁 ファイル位置: %CD%\vscode-extensions.txt
+echo  ファイル位置: %CD%\vscode-extensions.txt
 echo.
 
 REM 拡張機能の数を表示
 for /f %%i in ('type vscode-extensions.txt ^| find /c /v ""') do set count=%%i
-echo 📦 出力された拡張機能数: %count%個
+echo  出力された拡張機能数: %count%個
 echo.
 
 echo 内容を確認しますか？ (y/n)

@@ -118,10 +118,10 @@ Configuration examples are available in `/win_config/claude_desktop_config.json`
 **Google Analytics MCPサーバー**が正常にインストールされました。
 
 ### インストール内容：
-1. ✅ リポジトリのクローン
-2. ✅ 依存関係のインストール
-3. ✅ TypeScriptのビルド
-4. ✅ Claude Desktop設定ファイルの更新
+1.  リポジトリのクローン
+2.  依存関係のインストール
+3.  TypeScriptのビルド
+4.  Claude Desktop設定ファイルの更新
 
 ### 次のステップ（使用するために必要な設定）：
 

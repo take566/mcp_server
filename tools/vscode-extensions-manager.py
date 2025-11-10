@@ -71,8 +71,8 @@ class VSCodeExtensionManager:
                 for ext in extensions:
                     f.write(f"{ext}\n")
             
-            print(f"✅ {len(extensions)}個の拡張機能を {self.extensions_file} に出力しました")
-            print(f"📁 ファイル位置: {os.path.abspath(self.extensions_file)}")
+            print(f" {len(extensions)}個の拡張機能を {self.extensions_file} に出力しました")
+            print(f" ファイル位置: {os.path.abspath(self.extensions_file)}")
             return True
         except IOError as e:
             print(f"エラー: ファイルの書き込みに失敗しました: {e}")
@@ -103,8 +103,8 @@ class VSCodeExtensionManager:
             with open(self.extensions_json, 'w', encoding='utf-8') as f:
                 json.dump(extensions_data, f, indent=2, ensure_ascii=False)
             
-            print(f"✅ {len(extensions)}個の拡張機能を {self.extensions_json} に出力しました")
-            print(f"📁 ファイル位置: {os.path.abspath(self.extensions_json)}")
+            print(f" {len(extensions)}個の拡張機能を {self.extensions_json} に出力しました")
+            print(f" ファイル位置: {os.path.abspath(self.extensions_json)}")
             return True
         except IOError as e:
             print(f"エラー: ファイルの書き込みに失敗しました: {e}")
@@ -140,7 +140,7 @@ class VSCodeExtensionManager:
                 print("インストールする拡張機能が見つかりません")
                 return False
             
-            print(f"📦 {len(extensions)}個の拡張機能をインストールします...")
+            print(f" {len(extensions)}個の拡張機能をインストールします...")
             
             success_count = 0
             failed_extensions = []
@@ -151,12 +151,12 @@ class VSCodeExtensionManager:
                     result = subprocess.run(['code', '--install-extension', ext], 
                                           capture_output=True, text=True, check=True)
                     success_count += 1
-                    print(f"  ✅ 成功")
+                    print(f"   成功")
                 except subprocess.CalledProcessError as e:
                     failed_extensions.append(ext)
-                    print(f"  ❌ 失敗: {e}")
+                    print(f"   失敗: {e}")
             
-            print(f"\n📊 インストール結果:")
+            print(f"\n インストール結果:")
             print(f"  成功: {success_count}/{len(extensions)}")
             if failed_extensions:
                 print(f"  失敗: {len(failed_extensions)}")
@@ -218,7 +218,7 @@ class VSCodeExtensionManager:
             print("インストールされている拡張機能が見つかりません")
             return
         
-        print(f"📦 インストール済み拡張機能 ({len(extensions)}個):")
+        print(f" インストール済み拡張機能 ({len(extensions)}個):")
         for i, ext in enumerate(extensions, 1):
             print(f"  {i:2d}. {ext}")
 

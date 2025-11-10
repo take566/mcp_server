@@ -38,7 +38,7 @@ if %total% equ 0 (
     exit /b 1
 )
 
-echo 📦 %total%個の拡張機能をインストールします...
+echo  %total%個の拡張機能をインストールします...
 echo.
 
 REM インストール処理
@@ -52,10 +52,10 @@ for /f "usebackq delims=" %%a in ("%extensions_file%") do (
     
     code --install-extension "%%a" >nul 2>nul
     if !ERRORLEVEL! equ 0 (
-        echo   ✅ 成功
+        echo    成功
         set /a success+=1
     ) else (
-        echo   ❌ 失敗
+        echo    失敗
         set /a failed+=1
         echo %%a >> failed-extensions.txt
     )
@@ -64,13 +64,13 @@ for /f "usebackq delims=" %%a in ("%extensions_file%") do (
 
 REM 結果表示
 echo ================================
-echo 📊 インストール結果:
+echo  インストール結果:
 echo   成功: %success%/%total%
 echo   失敗: %failed%/%total%
 
 if %failed% gtr 0 (
     echo.
-    echo ⚠️  失敗した拡張機能は failed-extensions.txt に保存されました
+    echo   失敗した拡張機能は failed-extensions.txt に保存されました
     echo    手動でインストールするか、後で再試行してください
 )
 

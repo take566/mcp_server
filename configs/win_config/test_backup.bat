@@ -23,12 +23,12 @@ REM ファイルをコピー
 if exist "claude_desktop_config.json" (
     copy "claude_desktop_config.json" "%BACKUP_FILE%" >nul
     if %ERRORLEVEL% EQU 0 (
-        echo ✓ バックアップ作成成功: %BACKUP_FILE%
+        echo  バックアップ作成成功: %BACKUP_FILE%
     ) else (
-        echo ✗ バックアップ作成失敗
+        echo  バックアップ作成失敗
     )
 ) else (
-    echo ✗ ソースファイルが見つかりません: claude_desktop_config.json
+    echo  ソースファイルが見つかりません: claude_desktop_config.json
 )
 
 REM バックアップファイル一覧を表示

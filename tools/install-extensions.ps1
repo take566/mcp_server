@@ -37,7 +37,7 @@ if ($total -eq 0) {
     exit 1
 }
 
-Write-Host "📦 $total 個の拡張機能をインストールします..." -ForegroundColor Yellow
+Write-Host " $total 個の拡張機能をインストールします..." -ForegroundColor Yellow
 Write-Host
 
 # インストール処理
@@ -53,15 +53,15 @@ foreach ($extension in $extensions) {
     try {
         $result = & code --install-extension $extension 2>&1
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "  ✅ 成功" -ForegroundColor Green
+            Write-Host "   成功" -ForegroundColor Green
             $success++
         } else {
-            Write-Host "  ❌ 失敗" -ForegroundColor Red
+            Write-Host "   失敗" -ForegroundColor Red
             $failed++
             $failedExtensions += $extension
         }
     } catch {
-        Write-Host "  ❌ 失敗: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "   失敗: $($_.Exception.Message)" -ForegroundColor Red
         $failed++
         $failedExtensions += $extension
     }
@@ -70,13 +70,13 @@ foreach ($extension in $extensions) {
 
 # 結果表示
 Write-Host "================================" -ForegroundColor Magenta
-Write-Host "📊 インストール結果:" -ForegroundColor Yellow
+Write-Host " インストール結果:" -ForegroundColor Yellow
 Write-Host "  成功: $success/$total" -ForegroundColor Green
 Write-Host "  失敗: $failed/$total" -ForegroundColor Red
 
 if ($failed -gt 0) {
     Write-Host
-    Write-Host "⚠️  失敗した拡張機能:" -ForegroundColor Yellow
+    Write-Host "  失敗した拡張機能:" -ForegroundColor Yellow
     $failedExtensions | Out-File -FilePath "failed-extensions.txt" -Encoding UTF8
     foreach ($ext in $failedExtensions) {
         Write-Host "    - $ext" -ForegroundColor Red

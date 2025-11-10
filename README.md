@@ -2,7 +2,7 @@
 
 このリポジトリは、Model Context Protocol (MCP) サーバーのコレクションと関連ツールを管理しています。
 
-## 📁 ディレクトリ構造
+##  ディレクトリ構造
 
 ```
 mcp_server/
@@ -37,7 +37,7 @@ mcp_server/
 └── README.md             # このファイル
 ```
 
-## 🚀 利用可能なMCPサーバー
+##  利用可能なMCPサーバー
 
 ### ブラウザ自動化
 - **playwright-mcp**: Playwrightを使用したブラウザ自動化
@@ -61,7 +61,7 @@ mcp_server/
 - **mcp-obsidian**: Obsidian連携
 - **weather**: 天気情報取得
 
-## ⚙️ 設定
+##  設定
 
 ### Codex CLI設定
 
@@ -80,7 +80,7 @@ description = "Chrome DevTools MCP: run performance traces, inspect the DOM, and
 - Windows: `configs/win_config/claude_desktop_config.json`
 - Mac: `configs/mac/claude_desktop_config.json`
 
-## 🛠️ ツール
+##  ツール
 
 ### VS Code拡張機能管理
 
@@ -96,17 +96,17 @@ description = "Chrome DevTools MCP: run performance traces, inspect the DOM, and
 
 `tools/llm-script/` には、LLM関連のスクリプトとキャッシュ機能が含まれています。
 
-## 📚 ドキュメント
+##  ドキュメント
 
 `docs/` ディレクトリには、プロジェクトに関する詳細なドキュメントが含まれています。
 
-## 🔧 セットアップ
+##  セットアップ
 
 1. 必要なMCPサーバーを選択
 2. 各サーバーのREADMEを参照してセットアップ
 3. `configs/config.toml` で設定を追加
 4. Claude DesktopまたはCodex CLIで利用開始
 
-## 📝 ライセンス
+##  ライセンス
 
 各MCPサーバーは個別のライセンスに従います。詳細は各サーバーのREADMEを参照してください。
