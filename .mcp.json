@@ -8,6 +8,33 @@
         "@upstash/context7-mcp"
       ],
       "env": {}
+    },
+    "github_copilot": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@github/copilot",
+        "--allow-npx"
+      ],
+      "env": {}
+    },
+    "gemini-cli": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@choplin/mcp-gemini-cli",
+        "--allow-npx"
+      ],
+      "env": {}
+    },
+    "chrome-devtools-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@chrome-devtools-mcp@latest",
+        "--allow-npx"
+      ],
+      "env": {}
     }
   }
 }
