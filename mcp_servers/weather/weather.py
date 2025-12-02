@@ -1,8 +1,4 @@
-from typing import Any
-import httpx
-import asyncio
 import mcp.server.stdio
-import mcp.types
 
 # Initialize MCP server
 app = mcp.server.stdio.create_stdio_server()
