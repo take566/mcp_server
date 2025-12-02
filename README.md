@@ -106,6 +106,7 @@ description = "Chrome DevTools MCP: run performance traces, inspect the DOM, and
 2. 各サーバーのREADMEを参照してセットアップ
 3. `configs/config.toml` で設定を追加
 4. Claude DesktopまたはCodex CLIで利用開始
+5. AIコーディング環境全体の構築手順は `docs/AI_CODING_ENVIRONMENT.md` を参照
 
 ##  ライセンス
 

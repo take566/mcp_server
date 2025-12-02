@@ -48,3 +48,8 @@ jspm_packages/
 .kiro/steering/byterover-rules.md
 .qoder/rules/byterover-rules.md
 .augment/rules/byterover-rules.mdconfigs/win_config/nul
+mcp_servers/Ollama-mcp
+configs/win_config/nul
+.claude/
+.kiro/settings/
+# .kiro/steering はドキュメント管理対象なので除外しない
