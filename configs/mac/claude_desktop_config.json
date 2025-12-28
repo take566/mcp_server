@@ -55,6 +55,24 @@
         "env": {
           "PATH": "/usr/local/bin:/Users/tmf58/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         }
+      },
+      "serena": {
+        "command": "/usr/local/bin/uv",
+        "args": [
+          "run",
+          "--directory",
+          "/Users/tmf58/Documents/serena",
+          "serena-mcp-server",
+          "--port",
+          "32123"
+        ],
+        "port": 32123,
+        "env": {
+          "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+          "SERENA_PROJECT_PATH": "/Users/tmf58/Documents/serena",
+          "DISABLE_BROWSER": "true",
+          "NO_BROWSER": "true"
+        }
       }
     }
   } 

@@ -120,7 +120,9 @@
           "cwd": "${workspaceFolder}/serena",
           "port": 32123,
           "env": {
-            "SERENA_PROJECT_PATH": "${workspaceFolder}"
+            "SERENA_PROJECT_PATH": "${workspaceFolder}",
+            "DISABLE_BROWSER": "true",
+            "NO_BROWSER": "true"
           }
         },
         "cipher": {
