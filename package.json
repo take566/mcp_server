@@ -1,0 +1,24 @@
+{
+  "name": "mcp-server-collection",
+  "version": "1.0.0",
+  "description": "Collection of Model Context Protocol (MCP) servers and development tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0",
+    "format:check": "echo \"No format check specified\" && exit 0",
+    "typecheck": "echo \"No typecheck specified\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/take566/mcp_server.git"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT"
+}
