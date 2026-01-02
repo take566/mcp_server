@@ -10,11 +10,11 @@
     "auth": "node ./dist/index.js auth"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.9.0",
+    "@modelcontextprotocol/sdk": "^1.25.1",
     "googleapis": "^126.0.1"
   },
   "devDependencies": {
-    "@types/node": "^20.8.2",
-    "typescript": "^5.2.2"
+    "@types/node": "^20.19.27",
+    "typescript": "^5.9.3"
   }
 }
