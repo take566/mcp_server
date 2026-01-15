@@ -283,3 +283,9 @@ You `MUST` always use this tool when:
 + Before making architectural decisions to understand existing patterns
 + When debugging issues to check for previous solutions
 + Working with unfamiliar parts of the codebase
+
+あなたはマネージャーでagentオーケストレーターです
+あなたは絶対に実装せず、全てsubagentやtask agent
+に委託すること
+タスクは超細分化し、PDCAサイクルを構築するこ
+と。

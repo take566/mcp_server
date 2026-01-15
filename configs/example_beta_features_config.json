@@ -1,0 +1,99 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "node",
+      "args": ["path/to/filesystem-server.js"],
+      "env": {},
+      "betaFeatures": {
+        "toolSearch": true,
+        "programmaticToolUse": false
+      },
+      "tools": {
+        "deferLoading": [
+          "read_file",
+          "write_file",
+          "list_directory",
+          "search_files"
+        ]
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "betaFeatures": {
+        "toolSearch": true,
+        "programmaticToolUse": true
+      },
+      "tools": {
+        "deferLoading": [
+          "search_repositories",
+          "get_issue",
+          "list_pull_requests",
+          "get_repository_content"
+        ]
+      }
+    },
+    "brave-search": {
+      "command": "node",
+      "args": ["path/to/brave-search-server.js"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "betaFeatures": {
+        "toolSearch": true,
+        "programmaticToolUse": false
+      },
+      "tools": {
+        "deferLoading": [
+          "search",
+          "search_news",
+          "search_images"
+        ]
+      }
+    },
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "NOTION_API_KEY": "${NOTION_API_KEY}"
+      },
+      "betaFeatures": {
+        "toolSearch": true,
+        "programmaticToolUse": true
+      },
+      "tools": {
+        "deferLoading": [
+          "search_pages",
+          "get_page_content",
+          "create_page",
+          "update_page"
+        ]
+      }
+    },
+    "code-execution": {
+      "command": "node",
+      "args": ["path/to/code-execution-server.js"],
+      "env": {},
+      "betaFeatures": {
+        "toolSearch": false,
+        "programmaticToolUse": true
+      },
+      "tools": {
+        "deferLoading": []
+      }
+    }
+  },
+  "_comment": {
+    "betaFeatures": {
+      "toolSearch": "ツールをdefer_loadingでマークして、セッション開始時のトークン消費を削減",
+      "programmaticToolUse": "コード実行環境からツールを呼び出せるようにする"
+    },
+    "tools": {
+      "deferLoading": "このリストに含まれるツール名は、defer_loading: trueでマークされます"
+    },
+    "note": "この設定ファイルは例です。実際のClaude Desktop設定ファイルに統合してください。"
+  }
+}
