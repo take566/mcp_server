@@ -1,5 +1,22 @@
 {
   "mcpServers": {
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ],
+      "env": {}
+    },
+    "claude-mem": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "d:\\work\\mcp_server\\mcp_servers\\claude-mem\\plugin\\scripts\\mcp-server.cjs"
+      ],
+      "env": {}
+    },
     "context7": {
       "type": "stdio",
       "command": "npx",
@@ -7,7 +24,13 @@
         "-y",
         "@upstash/context7-mcp"
       ],
-      "env": {}
+      "env": {
+        "CONTEXT7_API_KEY": ""
+      }
+    },
+    "figma-desktop": {
+      "type": "sse",
+      "url": "http://127.0.0.1:3845/mcp"
     },
     "github_copilot": {
       "type": "stdio",
@@ -23,15 +46,6 @@
       "command": "npx",
       "args": [
         "@choplin/mcp-gemini-cli",
-        "--allow-npx"
-      ],
-      "env": {}
-    },
-    "chrome-devtools-mcp": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "@chrome-devtools-mcp@latest",
         "--allow-npx"
       ],
       "env": {}
