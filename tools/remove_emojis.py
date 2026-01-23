@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 import unicodedata
+import os
 from pathlib import Path
 from typing import Iterable
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 EMOJI_RANGES = [
@@ -72,6 +74,13 @@ def process_file(path: Path, apply_changes: bool) -> tuple[int, int]:
     return (1, removed)
 
 
+def _process_file_worker(args_tuple: tuple[Path, bool]) -> tuple[Path, int, int]:
+    """ProcessPoolExecutorで使用するためのワーカー関数"""
+    file_path, apply_changes = args_tuple
+    changed, removed = process_file(file_path, apply_changes)
+    return (file_path, changed, removed)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Remove emoji characters from text files.")
     parser.add_argument(
@@ -90,24 +99,63 @@ def main() -> None:
         action="store_true",
         help="Include hidden directories and files in the scan.",
     )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=None,
+        help="Maximum number of parallel workers (default: CPU count).",
+    )
     args = parser.parse_args()
 
     files_with_emojis = 0
     total_removed = 0
     root = args.root.resolve()
-    for file_path in iter_files(root, include_hidden=args.include_hidden):
-        changed, removed = process_file(file_path, apply_changes=args.apply)
-        if changed:
-            files_with_emojis += 1
-            total_removed += removed
-            status = "Updated" if args.apply else "Needs update"
-            print(f"{status}: {file_path}")
+    
+    # すべてのファイルをリストに収集
+    file_list = list(iter_files(root, include_hidden=args.include_hidden))
+    total_files = len(file_list)
+    
+    if total_files == 0:
+        print("No files found to process.")
+        return
+    
+    # 最大ワーカー数を決定（デフォルトはCPUコア数）
+    max_workers = args.max_workers or os.cpu_count() or 4
+    max_workers = min(max_workers, total_files)  # ファイル数より多くしない
+    
+    print(f"Processing {total_files} file(s) with {max_workers} worker(s)...")
+    
+    # ProcessPoolExecutorを使用して並列処理
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        # すべてのタスクを送信
+        future_to_file = {
+            executor.submit(_process_file_worker, (file_path, args.apply)): file_path
+            for file_path in file_list
+        }
+        
+        completed = 0
+        for future in as_completed(future_to_file):
+            completed += 1
+            file_path = future_to_file[future]
+            try:
+                path, changed, removed = future.result()
+                if changed:
+                    files_with_emojis += 1
+                    total_removed += removed
+                    status = "Updated" if args.apply else "Needs update"
+                    print(f"[{completed}/{total_files}] {status}: {path}")
+            except Exception as e:
+                print(f"[{completed}/{total_files}] Error processing {file_path}: {e}")
+            
+            # 進捗表示（10ファイルごと、または最後）
+            if completed % 10 == 0 or completed == total_files:
+                print(f"Progress: {completed}/{total_files} files processed...")
 
     if files_with_emojis == 0:
         print("No emojis found.")
     else:
         action = "Removed" if args.apply else "Identified"
-        print(f"{action} emojis in {files_with_emojis} file(s); total characters: {total_removed}.")
+        print(f"\n{action} emojis in {files_with_emojis} file(s); total characters: {total_removed}.")
 
 
 if __name__ == "__main__":
