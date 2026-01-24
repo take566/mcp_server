@@ -1,0 +1,50 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest"
+      ]
+    },
+    "serena-mcp": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server"
+      ],
+      "env": {}
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {
+        "CONTEXT7_API_KEY": ""
+      }
+    },
+    "cipher": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@byterover/cipher",
+        "--mode",
+        "mcp"
+      ],
+      "env": {
+        "CIPHER_WORKSPACE": "${workspaceFolder}/.cipher",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+        "CIPHER_EMBEDDER": "local"
+      }
+    },
+    "byterover-mcp": {
+      "url": "https://mcp.byterover.dev/mcp?machineId=1f096098-6cf9-6af0-a94b-0cf7c2ac3656"
+    }
+  }
+}

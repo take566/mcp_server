@@ -49,6 +49,14 @@
         "--allow-npx"
       ],
       "env": {}
+    },
+    "cipher": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/configs/win_config/load-env-and-run-cipher.cjs"
+      ],
+      "env": {}
     }
   }
 }

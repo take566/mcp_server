@@ -7,21 +7,16 @@
 ```
 mcp_server/
 ├── mcp_servers/          # MCPサーバーのコレクション
-│   ├── executeautomation-mcp-playwright/  # Playwright自動化MCP
+│   ├── claude-mem/                       # Claude Memory（セッション永続化）
 │   ├── filesystem-mcp/                   # ファイルシステムMCP
-│   ├── filesystem-mcp-new/               # 新しいファイルシステムMCP
 │   ├── gdrive-mcp/                       # Google Drive MCP
-│   ├── github-mcp/                       # GitHub MCP
-│   ├── google-analytics-mcp/             # Google Analytics MCP
 │   ├── markdownify-mcp/                  # Markdown変換MCP
 │   ├── mcp-obsidian/                     # Obsidian MCP
 │   ├── mcp-server-kubernetes/            # Kubernetes MCP
 │   ├── notion-mcp-server/                # Notion MCP
-│   ├── Ollama-mcp/                       # Ollama MCP
-│   ├── playwright-mcp/                   # Playwright MCP
-│   ├── puppeteer-mcp/                    # Puppeteer MCP
-│   ├── slack-mcp/                        # Slack MCP
-│   └── weather/                          # 天気情報MCP
+│   ├── Ollama-mcp/                       # Ollama LLM統合
+│   ├── puppeteer-mcp/                    # Puppeteerブラウザ制御
+│   └── slack-mcp/                        # Slack MCP
 ├── tools/                # 開発・管理ツール
 │   ├── llm-script/                       # LLM関連スクリプト
 │   ├── mcp-tool-utils.ts                 # MCP Tool Utilities (Tool Search & Programmatic Tool Use)
@@ -48,40 +43,29 @@ mcp_server/
 
 以下のMCPサーバーは、開発ワークフローで特に重要です：
 
-- **chrome-devtools**: Chrome DevTools Protocolを使用したブラウザ操作・デバッグ
 - **claude-mem**: Claude Codeのセッション間でコンテキストを永続化
 - **context7**: 最新のライブラリドキュメントとコード例を取得（Upstash）
-- **figma-desktop**: Figmaデザインファイルからコンテキストを取得
+- **serena**: セマンティックコーディングツール（シンボル検索・編集）
+- **byterover**: 知識ベース管理（プロジェクト知識の保存・取得）
 
 詳細なセットアップ手順は `docs/MCP_SERVERS_SETUP.md` を参照してください。
 
-### ブラウザ自動化
-- **playwright-mcp**: Playwrightを使用したブラウザ自動化
-- **executeautomation-mcp-playwright**: Playwright実行自動化
-- **puppeteer-mcp**: Puppeteerを使用したブラウザ制御
-- **chrome-devtools**: Chrome DevTools Protocolを使用したブラウザ操作・デバッグ
+### システム・ファイル操作
+- **filesystem-mcp**: ファイルシステム操作
+- **mcp-obsidian**: Obsidian連携
+- **markdownify-mcp**: Markdown変換
 
-### クラウド・API
+### ブラウザ自動化
+- **puppeteer-mcp**: Puppeteerを使用したブラウザ制御
+
+### クラウド・API連携
 - **gdrive-mcp**: Google Drive連携
-- **github-mcp**: GitHub連携
-- **google-analytics-mcp**: Google Analytics連携
 - **notion-mcp-server**: Notion連携
 - **slack-mcp**: Slack連携
-- **context7**: 最新のライブラリドキュメントとコード例を取得（Upstash）
 
-### デザイン・UI
-- **figma-desktop**: Figmaデザインファイルからコンテキストを取得
-
-### システム・インフラ
-- **filesystem-mcp**: ファイルシステム操作
+### インフラ・開発
 - **mcp-server-kubernetes**: Kubernetes管理
 - **Ollama-mcp**: Ollama LLM統合
-
-### ユーティリティ
-- **markdownify-mcp**: Markdown変換
-- **mcp-obsidian**: Obsidian連携
-- **weather**: 天気情報取得
-- **claude-mem**: Claude Codeのセッション間でコンテキストを永続化
 
 ##  設定
 
@@ -90,11 +74,11 @@ mcp_server/
 `configs/config.toml` ファイルでMCPサーバーを設定できます：
 
 ```toml
-[mcp_servers.chrome-devtools]
+[mcp_servers.serena]
 type = "stdio"
-command = "npx"
-args = ["chrome-devtools-mcp@latest"]
-description = "Chrome DevTools MCP: run performance traces, inspect the DOM, and perform real-time debugging of your web pages — useful for browser automation, end-to-end testing, and capturing page artifacts."
+command = "uv"
+args = ["run", "serena-mcp-server", "--port", "32123"]
+description = "Serena MCP: Semantic coding tools for intelligent symbol search and editing"
 ```
 
 ### Claude Desktop設定
@@ -160,22 +144,21 @@ Anthropicのベータ機能であるTool SearchとProgrammatic Tool Useをサポ
 
 ### クイックスタート（必須MCPサーバー）
 
-1. **Chrome DevTools MCP**
-   - Chromeをリモートデバッグモードで起動（ポート9222）
-   - `.mcp.json`に設定済み
-
-2. **Claude Mem**
+1. **Claude Mem**
    - `mcp_servers/claude-mem`にクローン・ビルド済み
-   - `.mcp.json`に設定済み
+   - `configs/win_config/claude_desktop_config.json`に設定
 
-3. **Context7**
+2. **Context7**
    - [context7.com/dashboard](https://context7.com/dashboard)でAPIキーを取得
    - `.mcp.json`の`context7.env.CONTEXT7_API_KEY`に設定
 
-4. **Figma MCP**
-   - FigmaデスクトップアプリでDev Modeを有効化
-   - MCPサーバーを有効化（`http://127.0.0.1:3845/mcp`）
-   - `.mcp.json`に設定済み
+3. **Serena**
+   - セマンティックコーディングツール（シンボル検索・編集）
+   - `configs/win_config/claude_desktop_config.json`に設定済み
+
+4. **Byterover**
+   - 知識ベース管理（プロジェクト知識の保存・取得）
+   - `configs/win_config/claude_desktop_config.json`に設定済み
 
 詳細は `docs/MCP_SERVERS_SETUP.md` を参照してください。
 

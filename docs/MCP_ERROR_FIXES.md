@@ -187,8 +187,154 @@ Claude Desktopの設定ファイルを確認：
 
 ---
 
+---
+
+## Cursor IDE MCP設定エラー（2026-01-24調査）
+
+### 発見された問題
+
+#### 1. context7 MCPサーバー: 環境変数設定の欠如
+
+**問題:**
+- 実際のCursor設定ファイル（`%USERPROFILE%\.cursor\mcp.json`）の`context7`サーバーに`env`セクションが存在しない
+- これにより、`CONTEXT7_API_KEY`が設定されず、context7サーバーが正常に動作しない可能性がある
+
+**修正内容:**
+- `context7`サーバーの設定に`env`セクションを追加
+- `CONTEXT7_API_KEY`フィールドを追加（空文字列、ユーザーが設定する必要がある）
+
+**設定ファイルの場所:**
+- Cursor: `%USERPROFILE%\.cursor\mcp.json` または `{project}/.cursor/mcp.json`
+- プロジェクト設定例: `d:\work\mcp_server\.mcp.json`
+
+**修正後の設定例:**
+```json
+"context7": {
+  "command": "npx",
+  "args": [
+    "-y",
+    "@upstash/context7-mcp"
+  ],
+  "env": {
+    "CONTEXT7_API_KEY": ""
+  }
+}
+```
+
+**注意事項:**
+- `CONTEXT7_API_KEY`は[context7.com/dashboard](https://context7.com/dashboard)で取得する必要があります
+- APIキーを設定するまで、context7サーバーは正常に動作しません
+
+#### 2. 設定ファイルの構造確認
+
+**調査結果:**
+- `.mcp.json`ファイルの構造はCursorの公式仕様に準拠している
+- `type`フィールドはオプション（一部のサーバーで使用、一部では不要）
+- stdioタイプのサーバー: `command`と`args`が必要
+- SSEタイプのサーバー: `url`が必要
+
+**現在の設定状況:**
+- ✅ `chrome-devtools`: 正常（stdio、npx経由）
+- ✅ `serena-mcp`: 正常（stdio、uvx経由）
+- ⚠️ `context7`: 修正済み（envセクション追加、APIキーはユーザー設定が必要）
+- ⚠️ `cipher`: APIキー未設定エラー（`OPENAI_API_KEY`または`ANTHROPIC_API_KEY`が必要）
+- ✅ `byterover-mcp`: 正常（SSE、URL指定）
+
+#### 3. パスとコマンドの検証
+
+**検証結果:**
+- すべてのコマンド（npx, node, uvx, cipher）が利用可能
+- `claude-mem`のパス（`d:\work\mcp_server\mcp_servers\claude-mem\plugin\scripts\mcp-server.cjs`）は存在することを確認
+
+---
+
+#### 3. cipher MCPサーバー: APIキー未設定エラー（修正済み）
+
+**問題:**
+- cipherサーバーが起動時に以下のエラーを出力：
+  ```
+  [CIPHER-MCP] ERROR: No API key or Ollama configuration found, please set at least one of OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY, OLLAMA_BASE_URL, or AWS credentials
+  ```
+- `.mcp.json`では`${OPENAI_API_KEY}`と`${ANTHROPIC_API_KEY}`を参照しているが、環境変数が設定されていない
+- Cursor IDEは`.env`ファイルを自動的に読み込まない
+
+**原因:**
+- `OPENAI_API_KEY`または`ANTHROPIC_API_KEY`の環境変数が設定されていない
+- Cursorの`${ENV_VAR}`構文はシステム環境変数のみを参照し、`.env`ファイルからは読み込まない
+- cipherサーバーはこれらのAPIキーのいずれかが必要
+
+**修正内容（2026-01-24）:**
+
+1. **`.env`ファイルに`ANTHROPIC_API_KEY`を追加:**
+   - `configs/win_config/.env`に`ANTHROPIC_API_KEY=your_anthropic_api_key_here`を追加
+   - ユーザーは実際のAPIキーに置き換える必要があります
+
+2. **Node.jsラッパースクリプトを作成:**
+   - `configs/win_config/load-env-and-run-cipher.cjs`を作成（CommonJS形式）
+   - このスクリプトは`.env`ファイルを読み込み、環境変数を設定してからcipherサーバーを起動します
+   - PowerShellスクリプトからNode.jsスクリプトに変更（より確実に動作）
+
+3. **`.mcp.json`を更新:**
+   - cipherサーバーの設定をNode.jsラッパースクリプトを使用するように変更
+   - Node.jsスクリプト経由で`.env`ファイルから環境変数を読み込む
+
+**修正後の設定:**
+```json
+"cipher": {
+  "type": "stdio",
+  "command": "node",
+  "args": [
+    "${workspaceFolder}/configs/win_config/load-env-and-run-cipher.cjs"
+  ],
+  "env": {}
+}
+```
+
+**使用方法:**
+1. `configs/win_config/.env`ファイルを開く
+2. `ANTHROPIC_API_KEY=your_anthropic_api_key_here`の値を実際のAPIキーに置き換える
+3. Cursor IDEを再起動してcipherサーバーが正常に動作することを確認
+
+**トラブルシューティング:**
+- スクリプトはプレースホルダー値を検出して警告を出します
+- APIキーが設定されていない場合、cipherサーバーは起動しません
+- `.env`ファイルのパスは`configs/win_config/.env`です
+- テストスクリプト`configs/win_config/test-cipher-env.ps1`で環境変数の設定を確認できます
+
+**テスト方法:**
+```powershell
+# 環境変数の設定を確認
+powershell.exe -ExecutionPolicy Bypass -File "configs\win_config\test-cipher-env.ps1"
+
+# cipherサーバーを直接テスト
+node configs\win_config\load-env-and-run-cipher.cjs
+```
+
+**注意事項:**
+- `.env`ファイルは`.gitignore`で除外されているため、Gitにはコミットされません
+- APIキーは機密情報なので、共有しないでください
+- プレースホルダー値（`your_anthropic_api_key_here`）は無視されます
+
+---
+
 ## 更新履歴
 
+- 2026-01-24: cipherサーバーのエラー修正完了
+  - Node.jsラッパースクリプト（`load-env-and-run-cipher.cjs`）を作成
+  - `.env`ファイルから環境変数を読み込む機能を実装
+  - テストスクリプト（`test-cipher-env.ps1`）を作成
+  - セットアップガイド（`README_CIPHER_SETUP.md`）を作成
+  - `.mcp.json`を更新してラッパースクリプトを使用するように変更
+  - プレースホルダー値の検出と警告機能を追加
+- 2026-01-24: cipherサーバーのエラー調査
+  - cipherサーバーのAPIキー未設定エラーを特定
+  - エラーメッセージと原因を記録
+  - 修正方法を追加
+- 2026-01-24: Cursor IDE MCP設定エラー調査
+  - context7サーバーのenvセクション欠如を修正
+  - cipherサーバーの設定を修正（`cipher`コマンドから`npx -y @byterover/cipher`に変更）
+  - 設定ファイルの構造検証
+  - パスとコマンドの検証
 - 2026-01-15: 初版作成
   - claude-code MCPサーバーのエラー分析
   - toolbox MCPサーバーのSSE接続エラー分析
