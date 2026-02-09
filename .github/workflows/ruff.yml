@@ -27,7 +27,7 @@ jobs:
       - name: Ruff version
         run: ruff --version
 
-      - name: Run Ruff (Weather MCP)
+      - name: Run Ruff (MCP Servers)
         run: |
-          # Limit scope to Weather MCP for now
-          ruff check mcp_servers/weather
+          # Check all Python MCP servers
+          ruff check mcp_servers/
