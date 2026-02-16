@@ -58,8 +58,8 @@ Streamable HTTP error: SSE stream disconnected: TypeError: terminated
    - プロキシ設定を確認
 
 2. **設定の確認**
-   - `toolbox`サーバーの設定を確認
-   - APIキーが正しく設定されているか確認
+  - `toolbox`サーバーの設定に **`--key` / `--profile` が含まれていない** ことを確認
+  - Smithery CLI の認証は `smithery login` で行う
 
 3. **再起動**
    - Claude Desktopを再起動
@@ -75,18 +75,51 @@ Streamable HTTP error: SSE stream disconnected: TypeError: terminated
     "-y",
     "@smithery/cli@latest",
     "run",
-    "@smithery/toolbox",
-    "--key",
-    "cf195fad-d0a4-4e8a-924b-857d744731b3",
-    "--profile",
-    "dizzy-echidna-X0paey"
+    "@smithery/toolbox"
   ]
 }
 ```
 
 **推奨対応:**
-- このエラーは接続の問題であり、設定の問題ではありません
-- サーバー側の問題の可能性が高いため、一時的に無効化するか、Smitheryのサポートに問い合わせることを推奨
+- まず設定から `--key` / `--profile` を削除し、`smithery login` を実行
+- それでもSSE切断が続く場合はサーバー側の問題の可能性が高いため、一時的に無効化するか、Smitheryのサポートに問い合わせることを推奨
+
+---
+
+### 2.1 playwright-mcp-server: `unknown option '--key'`
+
+**エラーメッセージ:**
+```
+error: unknown option '--key'
+```
+
+**原因:**
+- Smithery CLI v3 では `run` に `--key` / `--profile` を指定できない
+
+**修正方法:**
+
+1. **設定の確認**
+   - `playwright-mcp-server` の引数から `--key` を削除
+2. **認証**
+   - Smithery CLI は `smithery login` で認証
+
+**修正後の設定例:**
+```json
+"playwright-mcp-server": {
+  "command": "cmd",
+  "args": [
+    "/c",
+    "npx",
+    "-y",
+    "@smithery/cli@latest",
+    "run",
+    "@showfive/playwright-mcp-server"
+  ]
+}
+```
+
+**補足:**
+- `prompts/list` の `Method not found` は未実装による正常な応答です
 
 ---
 

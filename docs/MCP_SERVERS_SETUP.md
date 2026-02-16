@@ -199,6 +199,180 @@ Figmaデザインファイルからコンテキストを取得し、コード生
 
 ---
 
+### 5. grepai
+
+コードの意味に基づくセマンティック検索とコールグラフ追跡を提供するMCPサーバーです。自然言語でコードを検索し、関数の呼び出し元・呼び出し先を追跡できます。100%ローカル（Ollama）またはクラウド（OpenAI）のEmbedderに対応しています。
+
+#### セットアップ
+
+1. **grepaiのインストール**
+
+   grepaiは単一バイナリのCLIです。バイナリはユーザーが各自インストールする前提で、リポジトリには含めません。
+
+   - **Linux / macOS / Git Bash / WSL:**
+     ```bash
+     curl -sSL https://raw.githubusercontent.com/yoanbernabeu/grepai/main/install.sh | sh
+     ```
+   - **Windows（PowerShellでは上記が使えない場合）:**
+     - [GitHub Releases](https://github.com/yoanbernabeu/grepai/releases) から `grepai_*_windows_amd64.zip`（または該当アーキテクチャ）をダウンロード
+     - 解凍して `grepai.exe` をPATHの通ったフォルダに配置
+
+2. **プロジェクトの初期化とインデックス**
+
+   検索対象のプロジェクトのルートで以下を実行します。
+
+   ```bash
+   cd <プロジェクトルート>
+   grepai init
+   grepai watch
+   ```
+
+   `grepai watch` はファイル変更を監視してインデックスを更新します。MCPで検索を使う前に、**一度は `grepai watch` を実行**（またはバックグラウンドで常時起動）してインデックスを作成してください。
+
+   - バックグラウンド実行の例（別ターミナル）:
+     ```bash
+     grepai watch
+     ```
+
+3. **Embedder（任意）**
+
+   セマンティック検索にはEmbedderの設定が必要です。プロジェクトルートの `.grepai/config.yaml` で指定します。
+
+   - **ローカル（Ollama・推奨）:** 事前に [Ollama](https://ollama.com/) をインストールし、`nomic-embed-text` を用意した上で:
+     ```yaml
+     # .grepai/config.yaml
+     embedder:
+       provider: ollama
+       model: nomic-embed-text
+     ```
+   - **クラウド（OpenAI）:** APIキーが必要です。詳細は[公式ドキュメント（Embedders）](https://yoanbernabeu.github.io/grepai/backends/embedders/)を参照してください。
+
+4. **MCP設定**
+
+   **Cursor（`.mcp.json` またはプロジェクトの `.mcp.json`）:**
+
+   ```json
+   "grepai": {
+     "type": "stdio",
+     "command": "grepai",
+     "args": ["mcp-serve", "${workspaceFolder}"],
+     "env": {}
+   }
+   ```
+
+   `${workspaceFolder}` はCursorが開いているワークスペースのパスに解決されます。Windowsではプロジェクトパスを明示する場合、`"args": ["mcp-serve", "D:\\work\\mcp_server"]` のように指定することもできます。
+
+   **Claude Desktop（`claude_desktop_config.json`）:**
+
+   ```json
+   "grepai": {
+     "command": "grepai",
+     "args": ["mcp-serve", "D:\\work\\mcp_server"]
+   }
+   ```
+
+   利用するプロジェクトに合わせて `args` のパスを書き換えてください。
+
+5. **利用可能なツール**
+
+   | ツール名 | 説明 |
+   |----------|------|
+   | `grepai_search` | 自然言語によるセマンティックコード検索 |
+   | `grepai_trace_callers` | 指定シンボルを呼び出している関数を検索 |
+   | `grepai_trace_callees` | 指定シンボルが呼び出している関数を検索 |
+   | `grepai_trace_graph` | シンボル周辺のコールグラフを構築 |
+   | `grepai_index_status` | インデックスの状態と統計を確認 |
+
+#### 参考リンク
+
+- [grepai 公式サイト](https://yoanbernabeu.github.io/grepai/)
+- [GitHub: yoanbernabeu/grepai](https://github.com/yoanbernabeu/grepai)
+- [grepai mcp-serve コマンド](https://yoanbernabeu.github.io/grepai/commands/grepai_mcp-serve/)
+
+---
+
+### 6. Draw.io MCP
+
+[draw.io](https://www.draw.io) 公式の MCP サーバーです。LLM が draw.io エディタで図を開いたり作成したりできるようにします。XML（draw.io ネイティブ）、CSV（組織図・フローチャート等）、Mermaid.js 形式をサポートし、URL からコンテンツを取得することもできます。
+
+#### セットアップ
+
+1. **インストール（npx 推奨）**
+
+   追加のインストールは不要です。`npx @drawio/mcp` で起動します。初回実行時にパッケージが取得されます。
+
+   - グローバルインストールする場合:
+     ```bash
+     npm install -g @drawio/mcp
+     drawio-mcp
+     ```
+
+2. **MCP設定**
+
+   **Cursor（`.mcp.json`）:**
+
+   ```json
+   "drawio": {
+     "type": "stdio",
+     "command": "npx",
+     "args": ["-y", "@drawio/mcp"],
+     "env": {}
+   }
+   ```
+
+   **Claude Desktop（`claude_desktop_config.json`）:**
+
+   ```json
+   "drawio": {
+     "command": "npx",
+     "args": ["-y", "@drawio/mcp"]
+   }
+   ```
+
+3. **利用可能なツール**
+
+   | ツール名 | 説明 |
+   |----------|------|
+   | `open_drawio_xml` | draw.io 形式の XML または XML の URL をエディタで開く |
+   | `open_drawio_csv` | CSV データまたは URL を図に変換して開く（組織図・フローチャート等） |
+   | `open_drawio_mermaid` | Mermaid 記法または URL を draw.io 図に変換して開く |
+
+   各ツールでは `content`（必須）、`lightbox`（読み取り専用表示）、`dark`（"auto" / "true" / "false"）を指定できます。
+
+4. **使用例（プロンプト）**
+
+   - 「`open_drawio_mermaid` でユーザーログイン処理のフローチャートを作成して」
+   - 「`open_drawio_csv` で CEO → CTO/CFO、CTO 配下にエンジニア 3 名の組織図を作成して」
+   - 「`open_drawio_xml` で VPC とサブネット、セキュリティグループを含む AWS 構成図を作成して」
+
+   Claude Desktop で draw.io MCP を使う場合は、プロンプトでツール名を明示するか、プロジェクトのシステム指示に「図の作成には draw.io MCP のツール（open_drawio_mermaid, open_drawio_csv, open_drawio_xml）を使用する」と追加すると確実です。
+
+#### 参考リンク
+
+- [draw.io](https://www.draw.io) - オンライン図エディタ
+- [@drawio/mcp - npm](https://www.npmjs.com/package/@drawio/mcp)
+- [GitHub: jgraph/drawio-mcp](https://github.com/jgraph/drawio-mcp)
+- [Mermaid.js ドキュメント](https://mermaid.js.org/intro/)
+
+---
+
+### MCP Inspector によるテスト
+
+MCP サーバーのデバッグ・テストには [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) を使用できます。
+
+```bash
+# Inspector を起動
+npm run inspector
+
+# 特定のサーバーで Inspector をテスト
+npm run inspector:drawio       # Draw.io
+npm run inspector:claude-mem   # Claude Mem
+```
+
+詳細は [MCP Inspector ガイド](MCP_INSPECTOR.md) を参照してください。
+
+---
+
 ## 設定ファイルの場所
 
 ### Cursor
@@ -240,6 +414,20 @@ Figmaデザインファイルからコンテキストを取得し、コード生
 - **問題**: サーバーに接続できない
   - **解決策**: FigmaデスクトップアプリでMCPサーバーが有効になっているか確認。`http://127.0.0.1:3845/mcp`にアクセスできるか確認。
 
+### grepai
+
+- **問題**: 検索結果が空、または「インデックスがない」と出る
+  - **解決策**: プロジェクトルートで `grepai init` を実行した後、`grepai watch` を実行してインデックスを作成・更新してください。
+- **問題**: `grepai` コマンドが見つからない
+  - **解決策**: grepaiバイナリをインストールし、PATHに含まれているか確認してください。Windowsの場合はReleasesからダウンロードした `grepai.exe` の配置先をPATHに追加してください。
+
+### Draw.io MCP
+
+- **問題**: 図が開かない、または URL が壊れる
+  - **解決策**: draw.io MCP はコンテンツを圧縮して draw.io の `#create` URL を返します。LLM が URL を書き換えないよう、プロンプトで「open_drawio_* ツールを使って図を作成し、返された URL をそのまま提示して」と指定するか、プロジェクトのシステム指示に draw.io MCP の利用を明記してください。
+- **問題**: npx で起動しない
+  - **解決策**: Node.js と npm がインストールされ、`npx` が PATH に含まれているか確認してください。`npm install -g @drawio/mcp` でグローバルインストールし、`drawio-mcp` を command に指定する方法もあります。
+
 ---
 
 ## 追加のMCPサーバー
@@ -250,6 +438,10 @@ Figmaデザインファイルからコンテキストを取得し、コード生
 
 ## 更新履歴
 
+- 2025-02-XX: Draw.io MCP統合
+  - @drawio/mcp のセットアップ手順とMCP設定を追加
+- 2025-02-XX: grepai MCP統合
+  - grepaiセットアップ手順とMCP設定を追加
 - 2025-01-XX: 初版作成
   - Chrome DevTools MCP統合
   - Claude Mem統合

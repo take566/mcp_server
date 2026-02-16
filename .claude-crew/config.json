@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/d-kimuson/claude-crew/refs/heads/main/config-schema.json",
+  "name": "mcp_server",
+  "directory": "D:\\work\\mcp_server",
+  "language": "日本語",
+  "commands": {
+    "install": "npm install",
+    "build": "npm run build",
+    "test": "npm test",
+    "testFile": "npm test -- <file>",
+    "checks": [
+      "npm run typecheck",
+      "npm run format:check"
+    ],
+    "checkFiles": []
+  },
+  "git": {
+    "defaultBranch": "main",
+    "autoPull": true
+  },
+  "integrations": []
+}

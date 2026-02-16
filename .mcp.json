@@ -57,6 +57,18 @@
         "${workspaceFolder}/configs/win_config/load-env-and-run-cipher.cjs"
       ],
       "env": {}
+    },
+    "grepai": {
+      "type": "stdio",
+      "command": "grepai",
+      "args": ["mcp-serve", "${workspaceFolder}"],
+      "env": {}
+    },
+    "drawio": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@drawio/mcp"],
+      "env": {}
     }
   }
 }

@@ -53,3 +53,5 @@ configs/win_config/nul
 .claude/
 .kiro/settings/
 # .kiro/steering はドキュメント管理対象なので除外しない
+.grepai/
+.grepai-verify/
