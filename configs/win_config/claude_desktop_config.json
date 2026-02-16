@@ -37,60 +37,40 @@
       }
     },
     "mcp-obsidian": {
-      "command": "cmd",
+      "command": "npx",
       "args": [
-        "/c",
-        "npx",
         "-y",
-        "@smithery/cli@latest",
-        "run",
-        "mcp-obsidian",
+        "mcp-obsidian@latest",
         "--config",
-        "\"{\\\"vaultPath\\\":\\\"D:\\work\\Obsidian\\Obsidian\\\"}\""
+        "{\"vaultPath\":\"D:\\work\\Obsidian\\Obsidian\\\"}"
       ]
     },
     "toolbox": {
-      "command": "cmd",
+      "command": "npx",
       "args": [
-        "/c",
-        "npx",
         "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@smithery/toolbox"
+        "@smithery/toolbox@latest"
       ]
     },
     "playwright-mcp-server": {
-      "command": "cmd",
+      "command": "npx",
       "args": [
-        "/c",
-        "npx",
         "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@showfive/playwright-mcp-server"
+        "@showfive/playwright-mcp-server@latest"
       ]
     },
     "memory-mcp": {
-      "command": "cmd",
+      "command": "npx",
       "args": [
-        "/c",
-        "npx",
         "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@drdee/memory-mcp"
+        "@drdee/memory-mcp@latest"
       ]
     },
     "code-mcp": {
-      "command": "cmd",
+      "command": "npx",
       "args": [
-        "/c",
-        "npx",
         "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@block/code-mcp"
+        "@block/code-mcp@latest"
       ]
     },
     "context7": {
@@ -124,28 +104,15 @@
       }
     },
     "smart-thinking": {
-      "command": "cmd",
+      "command": "npx",
       "args": [
-        "/c",
-        "npx",
         "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@Leghis/smart-thinking"
+        "@Leghis/smart-thinking@latest"
       ]
     },
     "grepai": {
       "command": "grepai",
       "args": ["mcp-serve", "D:\\work\\mcp_server"]
-    },
-    "drawio": {
-      "command": "npx",
-      "args": ["-y", "@drawio/mcp"]
-    },
-    "mcp_server": {
-      "command": "npx",
-      "args": ["-y", "claude-crew@latest", "serve-mcp", "D:\\work\\mcp_server\\.claude-crew\\config.json"],
-      "env": {}
     }
   }
 }
