@@ -1,6 +1,8 @@
 # the name by which the project can be referenced within Serena
 project_name: "mcp_server"
 
+# required: default language (used by Serena config loader; use first of 'languages' if multiple)
+language: typescript
 
 # list of languages for which language servers are started; choose from:
 #   al                  bash                clojure             cpp                 csharp

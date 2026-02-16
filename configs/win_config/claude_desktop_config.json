@@ -37,12 +37,10 @@
       }
     },
     "mcp-obsidian": {
-      "command": "npx",
+      "command": "node",
       "args": [
-        "-y",
-        "mcp-obsidian@latest",
-        "--config",
-        "{\"vaultPath\":\"D:\\work\\Obsidian\\Obsidian\\\"}"
+        "d:\\work\\mcp_server\\mcp_servers\\mcp-obsidian-src\\dist\\index.js",
+        "D:\\work\\Obsidian\\Obsidian\\"
       ]
     },
     "toolbox": {
