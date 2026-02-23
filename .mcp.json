@@ -69,6 +69,16 @@
       "command": "npx",
       "args": ["-y", "@drawio/mcp"],
       "env": {}
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"],
+      "env": {
+        "SERENA_PROJECT_PATH": "D:/work",
+        "DISABLE_BROWSER": "true",
+        "NO_BROWSER": "true"
+      }
     }
   }
 }

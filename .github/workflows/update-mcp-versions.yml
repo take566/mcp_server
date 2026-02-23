@@ -1,0 +1,55 @@
+name: Update MCP versions
+
+on:
+  schedule:
+    # Weekly on Monday 00:00 UTC
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-mcp-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Update @modelcontextprotocol/* in each package
+        run: |
+          dirs=(
+            "mcp_servers/claude-mem"
+            "mcp_servers/mcp-server-kubernetes"
+            "mcp_servers/markdownify-mcp"
+            "mcp_servers/mcp-obsidian-src"
+            "mcp_servers/gdrive-mcp"
+            "mcp_servers/slack-mcp"
+            "mcp_servers/package"
+            "mcp-code-execution"
+          )
+          for dir in "${dirs[@]}"; do
+            if [ -f "$dir/package.json" ]; then
+              echo "Updating MCP deps in $dir"
+              (cd "$dir" && npx --yes npm-check-updates -u --target newest -f "@modelcontextprotocol/*")
+            fi
+          done
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: deps/update-mcp-versions
+          commit-message: "chore(deps): update @modelcontextprotocol/* to latest"
+          title: "chore(deps): update @modelcontextprotocol/* to latest"
+          body: |
+            Automated update of `@modelcontextprotocol/*` dependencies across the repository.
+            Please review and run CI before merging.
+          labels: dependencies

@@ -79,24 +79,26 @@
     "serena": {
       "command": "uv",
       "args": [
-        "run", 
+        "run",
+        "--directory",
+        "D:/work/serena",
         "serena-mcp-server",
+        "--transport",
+        "sse",
         "--port",
         "32123"
       ],
-      "cwd": "${workspaceFolder}/serena",
       "port": 32123,
       "env": {
-        "SERENA_PROJECT_PATH": "${workspaceFolder}",
+        "SERENA_PROJECT_PATH": "D:/work",
         "DISABLE_BROWSER": "true",
         "NO_BROWSER": "true"
       }
     },
     "cipher": {
-      "command": "cipher",
-      "args": ["--mode", "mcp"],
+      "command": "node",
+      "args": ["D:\\work\\mcp_server\\configs\\win_config\\load-env-and-run-cipher.cjs"],
       "env": {
-        "CIPHER_WORKSPACE": "${workspaceFolder}/.cipher",
         "OPENAI_API_KEY": "${OPENAI_API_KEY}",
         "CIPHER_EMBEDDER": "local"
       }
