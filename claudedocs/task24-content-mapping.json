@@ -1,0 +1,105 @@
+{
+  "analysis_complete": true,
+  "existing_documentation": {
+    "detect_changes": [
+      "detect-changes-workflow.md",
+      "detect-changes-examples.md",
+      "detect-changes-flowchart.txt"
+    ],
+    "typescript_ci": [
+      "ts-mcp-ci-implementation.md",
+      "ci-migration-guide.md"
+    ],
+    "python_ci": [
+      "py-mcp-ci-implementation-plan.md"
+    ],
+    "orchestration": [
+      "monorepo-ci-architecture.md"
+    ]
+  },
+  "workflow_files": [
+    "detect-changes.yml",
+    "ts-mcp-ci.yml",
+    "py-mcp-ci.yml",
+    "monorepo-ci.yml",
+    "ci.yml",
+    "ruff.yml"
+  ],
+  "content_mapping": {
+    "ci-cd-architecture.md": {
+      "sources": [
+        "monorepo-ci-architecture.md (system overview, mermaid diagrams)",
+        "detect-changes-workflow.md (workflow roles)",
+        "ts-mcp-ci-implementation.md (TypeScript architecture)",
+        "py-mcp-ci-implementation-plan.md (Python architecture)",
+        "detect-changes-flowchart.txt (data flow)"
+      ],
+      "new_sections": [
+        "Unified system architecture diagram",
+        "Technology stack comparison table",
+        "Performance characteristics by workflow",
+        "Integration patterns across workflows"
+      ]
+    },
+    "adding-new-mcp-server.md": {
+      "sources": [
+        "ts-mcp-ci-implementation.md (TypeScript server patterns)",
+        "detect-changes-workflow.md (path filter configuration)",
+        "detect-changes-examples.md (integration examples)"
+      ],
+      "new_sections": [
+        "Step-by-step TypeScript server checklist",
+        "Step-by-step Python server checklist",
+        "Sample PR workflow walkthrough",
+        "Directory structure requirements",
+        "Configuration file templates"
+      ]
+    },
+    "ci-cd-troubleshooting.md": {
+      "sources": [
+        "ci-migration-guide.md (common issues section)",
+        "ts-mcp-ci-implementation.md (troubleshooting section)",
+        "detect-changes-workflow.md (troubleshooting section)"
+      ],
+      "new_sections": [
+        "Change detection issues FAQ",
+        "Build/test failures diagnosis",
+        "Cache problems resolution",
+        "SDK compatibility fixes",
+        "Workflow debugging techniques",
+        "Log interpretation guide"
+      ]
+    },
+    "README-CI-CD.md": {
+      "sources": [
+        "All existing documentation (summary)",
+        "monorepo-ci-architecture.md (quick overview)"
+      ],
+      "new_sections": [
+        "5-minute quick start",
+        "Visual workflow navigation",
+        "Emergency response guide",
+        "Quick reference links"
+      ]
+    }
+  },
+  "cross_references": {
+    "architecture_to_troubleshooting": "System component → Troubleshooting section",
+    "architecture_to_adding_server": "Workflow diagram → Server addition steps",
+    "troubleshooting_to_examples": "Common issue → Example solution from detect-changes-examples",
+    "quick_ref_to_all": "Summary → Detailed documentation links"
+  },
+  "integration_plan": {
+    "no_duplication": "Extract unique content from each source, avoid repeating existing text",
+    "cross_linking": "Use relative links for navigation between documents",
+    "bilingual_strategy": "Japanese primary with English for technical terms and code",
+    "mermaid_diagrams": "Reuse existing diagrams where appropriate, create new unified diagrams",
+    "code_examples": "Extract working examples from detect-changes-examples.md"
+  },
+  "gaps_identified": [
+    "No comprehensive architecture diagram showing all three workflows together",
+    "Missing step-by-step guide for adding new servers",
+    "No unified troubleshooting guide (scattered across multiple docs)",
+    "No quick reference for developers new to the system"
+  ]
+}

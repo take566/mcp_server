@@ -1,0 +1,155 @@
+═══════════════════════════════════════════════════════════════════════════════
+                  CHANGE DETECTION WORKFLOW - EXECUTION FLOW
+═══════════════════════════════════════════════════════════════════════════════
+
+START: workflow_call trigger from calling workflow
+  │
+  ├─→ STEP 1: Checkout Code (fetch-depth: 0)
+  │     └─→ Retrieves full git history for accurate change detection
+  │
+  ├─→ STEP 2: Detect File Changes (dorny/paths-filter@v3)
+  │     │
+  │     └─→ Evaluates all path filters in parallel:
+  │         ├─ typescript_servers (7 server paths)
+  │         ├─ python_tools (tools/**/*.py)
+  │         ├─ root_config (package.json, tsconfig.json, .github/workflows/**, .npmrc)
+  │         ├─ claude_mem
+  │         ├─ gdrive_mcp
+  │         ├─ markdownify_mcp
+  │         ├─ mcp_obsidian
+  │         ├─ mcp_kubernetes
+  │         ├─ ollama_mcp
+  │         └─ package_mcp
+  │         
+  │     Output: Boolean flags for each filter (true/false)
+  │
+  ├─→ STEP 3: Determine Affected Servers
+  │     │
+  │     └─→ Iterate through individual server filters:
+  │         ├─ claude_mem filter == true? → Add "claude-mem" to array
+  │         ├─ gdrive_mcp filter == true? → Add "gdrive-mcp" to array
+  │         ├─ markdownify_mcp filter == true? → Add "markdownify-mcp" to array
+  │         ├─ mcp_obsidian filter == true? → Add "mcp-obsidian-src" to array
+  │         ├─ mcp_kubernetes filter == true? → Add "mcp-server-kubernetes" to array
+  │         ├─ ollama_mcp filter == true? → Add "Ollama-mcp" to array
+  │         └─ package_mcp filter == true? → Add "package" to array
+  │         
+  │     Output: JSON array of affected servers
+  │     Example: ["claude-mem", "gdrive-mcp"]
+  │
+  ├─→ STEP 4: Determine Impact Level
+  │     │
+  │     └─→ Logic Decision Tree:
+  │         │
+  │         ├─ root_config == true? 
+  │         │   └─→ impact_level = "CRITICAL" ✓ (STOP)
+  │         │
+  │         ├─ affected_servers count > 3?
+  │         │   └─→ impact_level = "HIGH" ✓ (STOP)
+  │         │
+  │         ├─ affected_servers count >= 2?
+  │         │   └─→ impact_level = "MEDIUM" ✓ (STOP)
+  │         │
+  │         ├─ affected_servers count == 1?
+  │         │   └─→ impact_level = "LOW" ✓ (STOP)
+  │         │
+  │         └─ else
+  │             └─→ impact_level = "NONE"
+  │         
+  │     Output: Impact level string
+  │
+  ├─→ STEP 5: List All Servers
+  │     │
+  │     └─→ Discovery Process:
+  │         ├─ Find all directories in mcp_servers/ (max depth 1)
+  │         ├─ Remove "mcp_servers" entry itself
+  │         ├─ Sort alphabetically
+  │         └─ Convert to JSON array
+  │         
+  │     Output: Complete server list
+  │     Example: ["claude-mem", "gdrive-mcp", "markdownify-mcp", ...]
+  │
+  ├─→ STEP 6: Summary (GitHub Step Summary)
+  │     │
+  │     └─→ Format and output:
+  │         ├─ ## Change Detection Summary
+  │         ├─ **Impact Level**: {value}
+  │         ├─ **TypeScript Changed**: {value}
+  │         ├─ **Python Changed**: {value}
+  │         ├─ **Root Config Changed**: {value}
+  │         └─ **Affected Servers**:
+  │             └─ - server1
+  │             └─ - server2
+  │             └─ ...
+  │
+  └─→ RETURN OUTPUTS:
+       ├─ affected_servers: ["server1", "server2", ...]
+       ├─ impact_level: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "NONE"
+       ├─ typescript_changed: true | false
+       ├─ python_changed: true | false
+       └─ all_servers: ["server1", "server2", ...]
+
+DOWNSTREAM: Calling workflow receives outputs and uses them for:
+  ├─ Conditional job execution (if: ... == 'true')
+  ├─ Matrix strategy for parallel testing
+  ├─ Impact-based notifications and actions
+  └─ Comprehensive change reporting
+
+═══════════════════════════════════════════════════════════════════════════════
+
+EXAMPLE SCENARIOS:
+─────────────────────────────────────────────────────────────────────────────
+
+Scenario 1: Single TypeScript server modified
+  Changes: mcp_servers/claude-mem/src/index.ts
+  
+  Output:
+  ├─ affected_servers: ["claude-mem"]
+  ├─ impact_level: "LOW"
+  ├─ typescript_changed: true
+  ├─ python_changed: false
+  └─ all_servers: [all 13 servers]
+
+─────────────────────────────────────────────────────────────────────────────
+
+Scenario 2: Two servers + Python tool modified
+  Changes:
+    - mcp_servers/gdrive-mcp/package.json
+    - mcp_servers/markdownify-mcp/src/main.ts
+    - tools/utility.py
+  
+  Output:
+  ├─ affected_servers: ["gdrive-mcp", "markdownify-mcp"]
+  ├─ impact_level: "MEDIUM"
+  ├─ typescript_changed: true
+  ├─ python_changed: true
+  └─ all_servers: [all 13 servers]
+
+─────────────────────────────────────────────────────────────────────────────
+
+Scenario 3: Root config changed
+  Changes:
+    - package.json (version bump)
+    - mcp_servers/Ollama-mcp/README.md
+  
+  Output:
+  ├─ affected_servers: ["Ollama-mcp"]
+  ├─ impact_level: "CRITICAL" (root_config override)
+  ├─ typescript_changed: true
+  ├─ python_changed: false
+  └─ all_servers: [all 13 servers]
+
+─────────────────────────────────────────────────────────────────────────────
+
+Scenario 4: Workflow file modified
+  Changes:
+    - .github/workflows/ci.yml
+  
+  Output:
+  ├─ affected_servers: []
+  ├─ impact_level: "CRITICAL" (root_config changed)
+  ├─ typescript_changed: false
+  ├─ python_changed: false
+  └─ all_servers: [all 13 servers]
+
+═══════════════════════════════════════════════════════════════════════════════

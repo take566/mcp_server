@@ -1,0 +1,159 @@
+name: Detect Changes
+
+on:
+  workflow_call:
+    outputs:
+      affected_servers:
+        description: 'JSON array of affected MCP servers'
+        value: ${{ jobs.detect.outputs.affected_servers }}
+      impact_level:
+        description: 'Impact level: CRITICAL, HIGH, MEDIUM, LOW'
+        value: ${{ jobs.detect.outputs.impact_level }}
+      typescript_changed:
+        description: 'Whether TypeScript servers were changed'
+        value: ${{ jobs.detect.outputs.typescript_changed }}
+      python_changed:
+        description: 'Whether Python tools were changed'
+        value: ${{ jobs.detect.outputs.python_changed }}
+      all_servers:
+        description: 'JSON array of all MCP servers in the repository'
+        value: ${{ jobs.detect.outputs.all_servers }}
+
+jobs:
+  detect:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      affected_servers: ${{ steps.determine-affected.outputs.affected_servers }}
+      impact_level: ${{ steps.determine-impact.outputs.impact_level }}
+      typescript_changed: ${{ steps.filter.outputs.typescript_servers == 'true' }}
+      python_changed: ${{ steps.filter.outputs.python_tools == 'true' }}
+      all_servers: ${{ steps.list-servers.outputs.all_servers }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            typescript_servers:
+              - 'mcp_servers/claude-mem/**'
+              - 'mcp_servers/gdrive-mcp/**'
+              - 'mcp_servers/markdownify-mcp/**'
+              - 'mcp_servers/mcp-obsidian-src/**'
+              - 'mcp_servers/mcp-server-kubernetes/**'
+              - 'mcp_servers/Ollama-mcp/**'
+              - 'mcp_servers/package/**'
+            python_tools:
+              - 'tools/**/*.py'
+            root_config:
+              - 'package.json'
+              - 'tsconfig.json'
+              - '.github/workflows/**'
+              - '.npmrc'
+            claude_mem:
+              - 'mcp_servers/claude-mem/**'
+            gdrive_mcp:
+              - 'mcp_servers/gdrive-mcp/**'
+            markdownify_mcp:
+              - 'mcp_servers/markdownify-mcp/**'
+            mcp_obsidian:
+              - 'mcp_servers/mcp-obsidian-src/**'
+            mcp_kubernetes:
+              - 'mcp_servers/mcp-server-kubernetes/**'
+            ollama_mcp:
+              - 'mcp_servers/Ollama-mcp/**'
+            package_mcp:
+              - 'mcp_servers/package/**'
+
+      - name: Determine affected servers
+        id: determine-affected
+        run: |
+          affected_servers=()
+
+          if [ "${{ steps.filter.outputs.claude_mem }}" = "true" ]; then
+            affected_servers+=("claude-mem")
+          fi
+
+          if [ "${{ steps.filter.outputs.gdrive_mcp }}" = "true" ]; then
+            affected_servers+=("gdrive-mcp")
+          fi
+
+          if [ "${{ steps.filter.outputs.markdownify_mcp }}" = "true" ]; then
+            affected_servers+=("markdownify-mcp")
+          fi
+
+          if [ "${{ steps.filter.outputs.mcp_obsidian }}" = "true" ]; then
+            affected_servers+=("mcp-obsidian-src")
+          fi
+
+          if [ "${{ steps.filter.outputs.mcp_kubernetes }}" = "true" ]; then
+            affected_servers+=("mcp-server-kubernetes")
+          fi
+
+          if [ "${{ steps.filter.outputs.ollama_mcp }}" = "true" ]; then
+            affected_servers+=("Ollama-mcp")
+          fi
+
+          if [ "${{ steps.filter.outputs.package_mcp }}" = "true" ]; then
+            affected_servers+=("package")
+          fi
+
+          # Convert array to JSON
+          json_output=$(printf '%s\n' "${affected_servers[@]}" | jq -R . | jq -s .)
+          echo "affected_servers=${json_output}" >> $GITHUB_OUTPUT
+
+          echo "Affected servers: ${affected_servers[@]}"
+
+      - name: Determine impact level
+        id: determine-impact
+        run: |
+          root_config_changed="${{ steps.filter.outputs.root_config }}"
+          affected_count=$(echo '${{ steps.determine-affected.outputs.affected_servers }}' | jq 'length')
+
+          if [ "$root_config_changed" = "true" ]; then
+            impact_level="CRITICAL"
+          elif [ "$affected_count" -gt 3 ]; then
+            impact_level="HIGH"
+          elif [ "$affected_count" -ge 2 ]; then
+            impact_level="MEDIUM"
+          elif [ "$affected_count" -eq 1 ]; then
+            impact_level="LOW"
+          else
+            impact_level="NONE"
+          fi
+
+          echo "impact_level=${impact_level}" >> $GITHUB_OUTPUT
+          echo "Impact level: ${impact_level} (${affected_count} servers affected)"
+
+      - name: List all servers
+        id: list-servers
+        run: |
+          # Generate list of all MCP servers in the repository
+          all_servers=$(find mcp_servers -maxdepth 1 -type d ! -name 'mcp_servers' | \
+                         sed 's|^mcp_servers/||' | \
+                         sort | \
+                         jq -R . | \
+                         jq -s .)
+
+          echo "all_servers=${all_servers}" >> $GITHUB_OUTPUT
+          echo "All servers: ${all_servers}"
+
+      - name: Summary
+        run: |
+          echo "## Change Detection Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Impact Level**: ${{ steps.determine-impact.outputs.impact_level }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**TypeScript Changed**: ${{ steps.filter.outputs.typescript_servers }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Python Changed**: ${{ steps.filter.outputs.python_tools }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Root Config Changed**: ${{ steps.filter.outputs.root_config }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Affected Servers**:" >> $GITHUB_STEP_SUMMARY
+          echo '${{ steps.determine-affected.outputs.affected_servers }}' | jq '.[] | "- \(.)"' -r >> $GITHUB_STEP_SUMMARY
