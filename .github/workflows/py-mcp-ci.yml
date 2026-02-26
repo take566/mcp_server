@@ -18,7 +18,7 @@ jobs:
     name: Detect Python Changes
     uses: ./.github/workflows/detect-changes.yml
     with:
-      base_ref: ${{ github.event.pull_request.base.sha || github.event.before }}
+      base_ref: ${{ github.event.pull_request.base.ref && format('origin/{0}', github.event.pull_request.base.ref) || github.event.before }}
 
   # Phase 2: Lint and Test Matrix
   lint-and-test:
