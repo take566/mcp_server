@@ -51,40 +51,36 @@ jobs:
           fetch-depth: 0
 
       - name: Detect file changes
-        uses: dorny/paths-filter@v3
         id: filter
-        with:
-          base: ${{ inputs.base_ref || '' }}
-          filters: |
-            typescript_servers:
-              - 'mcp_servers/claude-mem/**'
-              - 'mcp_servers/gdrive-mcp/**'
-              - 'mcp_servers/markdownify-mcp/**'
-              - 'mcp_servers/mcp-obsidian-src/**'
-              - 'mcp_servers/mcp-server-kubernetes/**'
-              - 'mcp_servers/Ollama-mcp/**'
-              - 'mcp_servers/package/**'
-            python_tools:
-              - 'tools/**/*.py'
-            root_config:
-              - 'package.json'
-              - 'tsconfig.json'
-              - '.github/workflows/**'
-              - '.npmrc'
-            claude_mem:
-              - 'mcp_servers/claude-mem/**'
-            gdrive_mcp:
-              - 'mcp_servers/gdrive-mcp/**'
-            markdownify_mcp:
-              - 'mcp_servers/markdownify-mcp/**'
-            mcp_obsidian:
-              - 'mcp_servers/mcp-obsidian-src/**'
-            mcp_kubernetes:
-              - 'mcp_servers/mcp-server-kubernetes/**'
-            ollama_mcp:
-              - 'mcp_servers/Ollama-mcp/**'
-            package_mcp:
-              - 'mcp_servers/package/**'
+        run: |
+          base="${{ inputs.base_ref || 'origin/main' }}"
+          if [ -z "$base" ]; then base="origin/main"; fi
+          changed=$(git diff --name-only "$base" HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+          check_path() { echo "$changed" | grep -qE "^$1"; }
+          set_output() { echo "$1=$2" >> $GITHUB_OUTPUT; }
+
+          check_path "mcp_servers/claude-mem/" && set_output "claude_mem" "true" || set_output "claude_mem" "false"
+          check_path "mcp_servers/gdrive-mcp/" && set_output "gdrive_mcp" "true" || set_output "gdrive_mcp" "false"
+          check_path "mcp_servers/markdownify-mcp/" && set_output "markdownify_mcp" "true" || set_output "markdownify_mcp" "false"
+          check_path "mcp_servers/mcp-obsidian-src/" && set_output "mcp_obsidian" "true" || set_output "mcp_obsidian" "false"
+          check_path "mcp_servers/mcp-server-kubernetes/" && set_output "mcp_kubernetes" "true" || set_output "mcp_kubernetes" "false"
+          check_path "mcp_servers/Ollama-mcp/" && set_output "ollama_mcp" "true" || set_output "ollama_mcp" "false"
+          check_path "mcp_servers/package/" && set_output "package_mcp" "true" || set_output "package_mcp" "false"
+
+          ts_changed="false"
+          for p in mcp_servers/claude-mem/ mcp_servers/gdrive-mcp/ mcp_servers/markdownify-mcp/ mcp_servers/mcp-obsidian-src/ mcp_servers/mcp-server-kubernetes/ mcp_servers/Ollama-mcp/ mcp_servers/package/; do
+            echo "$changed" | grep -qE "^$p" && ts_changed="true" && break
+          done
+          set_output "typescript_servers" "$ts_changed"
+
+          echo "$changed" | grep -qE "^tools/.*\.py" && set_output "python_tools" "true" || set_output "python_tools" "false"
+
+          root_changed="false"
+          echo "$changed" | grep -qE "^(package\.json|tsconfig\.json|\.github/workflows/|\.npmrc)" && root_changed="true"
+          set_output "root_config" "$root_changed"
+
+          echo "Changed files (count): $(echo "$changed" | grep -c . || echo 0)"
 
       - name: Determine affected servers
         id: determine-affected
