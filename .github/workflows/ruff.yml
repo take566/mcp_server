@@ -1,15 +1,37 @@
-name: Ruff
+name: Ruff (Legacy)
+
+# NOTE: This workflow is being replaced by py-mcp-ci.yml
+# Kept for backward compatibility during transition
+# TODO: Remove this workflow after py-mcp-ci.yml is validated
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'mcp_servers/**/*.py'
+      - 'tools/**/*.py'
+      - '.github/workflows/ruff.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'mcp_servers/**/*.py'
+      - 'tools/**/*.py'
+      - '.github/workflows/ruff.yml'
 
 jobs:
+  detect-changes:
+    name: Detect Python Changes
+    uses: ./.github/workflows/detect-changes.yml
+    with:
+      base_ref: ${{ github.event.pull_request.base.sha || github.event.before }}
+
   ruff-check:
     name: Run Ruff lint
     runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python_changed == 'true'
+    timeout-minutes: 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,7 +49,27 @@ jobs:
       - name: Ruff version
         run: ruff --version
 
-      - name: Run Ruff (MCP Servers)
+      - name: Run Ruff check (MCP Servers)
         run: |
           # Check all Python MCP servers
-          ruff check mcp_servers/
+          echo "Checking mcp_servers/ directory..."
+          ruff check mcp_servers/ --output-format=github
+
+      - name: Run Ruff check (Tools)
+        run: |
+          # Check Python tools
+          echo "Checking tools/ directory..."
+          ruff check tools/ --output-format=github
+
+      - name: Run Ruff format check
+        run: |
+          echo "Checking code formatting..."
+          ruff format --check mcp_servers/ tools/
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## Ruff Lint Results (Legacy Workflow)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Note**: Transitioning to py-mcp-ci.yml workflow" >> $GITHUB_STEP_SUMMARY
