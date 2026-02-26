@@ -4,7 +4,11 @@ on:
   workflow_call:
     inputs:
       base_ref:
-        description: 'Base ref for change detection (PR base SHA or push before SHA)'
+        description: 'Base ref for change detection (e.g. origin/main)'
+        required: false
+        type: string
+      head_ref:
+        description: 'Head ref to checkout (e.g. PR branch name)'
         required: false
         type: string
     outputs:
@@ -29,6 +33,9 @@ jobs:
     name: Detect Changed Files
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       affected_servers: ${{ steps.determine-affected.outputs.affected_servers }}
       impact_level: ${{ steps.determine-impact.outputs.impact_level }}
@@ -40,13 +47,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.head_ref }}
           fetch-depth: 0
 
       - name: Detect file changes
         uses: dorny/paths-filter@v3
         id: filter
         with:
-          base: ${{ inputs.base_ref }}
+          base: ${{ inputs.base_ref || '' }}
           filters: |
             typescript_servers:
               - 'mcp_servers/claude-mem/**'
@@ -162,4 +170,9 @@ jobs:
           echo "**Root Config Changed**: ${{ steps.filter.outputs.root_config }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Affected Servers**:" >> $GITHUB_STEP_SUMMARY
-          echo '${{ steps.determine-affected.outputs.affected_servers }}' | jq '.[] | "- \(.)"' -r >> $GITHUB_STEP_SUMMARY
+          affected='${{ steps.determine-affected.outputs.affected_servers }}'
+          if [ -n "$affected" ] && [ "$affected" != "[]" ]; then
+            echo "$affected" | jq -r '.[] | "- \(.)"' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- (none)" >> $GITHUB_STEP_SUMMARY
+          fi

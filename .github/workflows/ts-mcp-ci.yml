@@ -19,6 +19,7 @@ jobs:
     uses: ./.github/workflows/detect-changes.yml
     with:
       base_ref: ${{ github.event.pull_request.base.ref && format('origin/{0}', github.event.pull_request.base.ref) || github.event.before }}
+      head_ref: ${{ github.head_ref || github.ref_name }}
 
   # Phase 2: Build and Test Matrix
   build-and-test:
