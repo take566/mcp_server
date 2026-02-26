@@ -1,0 +1,155 @@
+name: Python MCP CI/CD
+
+on:
+  push:
+    branches: [main, feature/*]
+  pull_request:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+# Cancel in-progress workflows on same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    name: Detect Python Changes
+    uses: ./.github/workflows/detect-changes.yml
+    with:
+      base_ref: ${{ github.event.pull_request.base.ref && format('origin/{0}', github.event.pull_request.base.ref) || github.event.before }}
+      head_ref: ${{ github.head_ref || github.ref_name }}
+
+  # Phase 2: Lint and Test Matrix
+  lint-and-test:
+    name: Lint & Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python_changed == 'true'
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "tools/llm-script/pyproject.toml"
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            tools/llm-script/.venv
+          key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('tools/llm-script/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        working-directory: tools/llm-script
+        run: |
+          uv sync --all-extras
+
+      - name: Run ruff check
+        working-directory: tools/llm-script
+        run: |
+          uv run ruff check . --output-format=github
+
+      - name: Run ruff format check
+        working-directory: tools/llm-script
+        run: |
+          uv run ruff format --check .
+
+      - name: Run mypy type checking
+        working-directory: tools/llm-script
+        continue-on-error: true
+        run: |
+          uv run mypy . || echo "⚠️ Type checking issues found (non-blocking)"
+
+      - name: Run pytest with coverage
+        working-directory: tools/llm-script
+        run: |
+          # Check if tests directory exists
+          if [ -d "tests" ]; then
+            uv run pytest --cov=. --cov-report=term-missing --cov-report=xml --cov-report=html
+          else
+            echo "⚠️ No tests directory found - skipping tests"
+            echo "Create tests/ directory and add test files to enable testing"
+          fi
+
+      - name: Upload coverage reports
+        if: success() && hashFiles('tools/llm-script/coverage.xml') != ''
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./tools/llm-script/coverage.xml
+          flags: python
+          name: python-${{ matrix.python-version }}
+          fail_ci_if_error: false
+
+      - name: Store coverage HTML
+        if: success() && hashFiles('tools/llm-script/htmlcov/index.html') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html-${{ matrix.python-version }}
+          path: tools/llm-script/htmlcov/
+          retention-days: 7
+
+
+  # Phase 3: CI Summary
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint-and-test]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Python MCP CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Target**: tools/llm-script" >> $GITHUB_STEP_SUMMARY
+          echo "**Python Versions**: 3.11, 3.12" >> $GITHUB_STEP_SUMMARY
+          echo "**Package Manager**: uv (modern Python package installer)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Change Detection: ${{ needs.detect-changes.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Lint & Test: ${{ needs.lint-and-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.lint-and-test.result }}" = "success" ]; then
+            echo "✅ **All checks passed**" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.lint-and-test.result }}" = "skipped" ]; then
+            echo "⏭️ **Checks skipped** (no Python changes detected)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Some checks failed** - review logs above" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quality Gates" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Ruff linting (enforced)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Ruff formatting (enforced)" >> $GITHUB_STEP_SUMMARY
+          echo "- ⚠️ Mypy type checking (advisory)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 Pytest coverage reporting" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.detect-changes.outputs.python_changed }}" = "true" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+            echo "- Review coverage reports in job artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "- Address any ruff linting/formatting issues" >> $GITHUB_STEP_SUMMARY
+            echo "- Consider fixing mypy type checking warnings" >> $GITHUB_STEP_SUMMARY
+          fi
