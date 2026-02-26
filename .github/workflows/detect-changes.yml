@@ -47,7 +47,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.head_ref }}
+          ref: ${{ inputs.head_ref || github.ref }}
           fetch-depth: 0
 
       - name: Detect file changes
