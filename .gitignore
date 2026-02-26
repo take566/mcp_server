@@ -47,9 +47,11 @@ jspm_packages/
 .cursor/rules/byterover-rules.mdc
 .kiro/steering/byterover-rules.md
 .qoder/rules/byterover-rules.md
-.augment/rules/byterover-rules.mdconfigs/win_config/nul
-mcp_servers/Ollama-mcp
+.augment/rules/byterover-rules.md
+# Windows reserved device names (cannot be created as files on Windows)
+nul
 configs/win_config/nul
+mcp_servers/Ollama-mcp
 .claude/
 .kiro/settings/
 # .kiro/steering はドキュメント管理対象なので除外しない
