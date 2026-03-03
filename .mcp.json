@@ -2,8 +2,10 @@
   "mcpServers": {
     "chrome-devtools": {
       "type": "stdio",
-      "command": "npx",
+      "command": "cmd",
       "args": [
+        "/c",
+        "npx",
         "-y",
         "chrome-devtools-mcp@latest"
       ],
@@ -19,65 +21,55 @@
     },
     "context7": {
       "type": "stdio",
-      "command": "npx",
+      "command": "cmd",
       "args": [
+        "/c",
+        "npx",
         "-y",
         "@upstash/context7-mcp"
       ],
-      "env": {
-        "CONTEXT7_API_KEY": ""
-      }
+      "env": {}
     },
     "figma-desktop": {
       "type": "sse",
       "url": "http://127.0.0.1:3845/mcp"
     },
-    "github_copilot": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "@github/copilot",
-        "--allow-npx"
-      ],
-      "env": {}
-    },
     "gemini-cli": {
       "type": "stdio",
-      "command": "npx",
+      "command": "cmd",
       "args": [
-        "@choplin/mcp-gemini-cli",
-        "--allow-npx"
+        "/c",
+        "npx",
+        "-y",
+        "@choplin/mcp-gemini-cli"
       ],
-      "env": {}
-    },
-    "cipher": {
-      "type": "stdio",
-      "command": "node",
-      "args": [
-        "${workspaceFolder}/configs/win_config/load-env-and-run-cipher.cjs"
-      ],
-      "env": {}
-    },
-    "grepai": {
-      "type": "stdio",
-      "command": "grepai",
-      "args": ["mcp-serve", "${workspaceFolder}"],
       "env": {}
     },
     "drawio": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@drawio/mcp"],
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@drawio/mcp"
+      ],
       "env": {}
     },
     "serena": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"],
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server"
+      ],
       "env": {
         "SERENA_PROJECT_PATH": "D:/work",
         "DISABLE_BROWSER": "true",
-        "NO_BROWSER": "true"
+        "NO_BROWSER": "true",
+        "ENABLE_TOOL_SEARCH": "true"
       }
     }
   }

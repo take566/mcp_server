@@ -198,6 +198,10 @@ export function extractBetaFeaturesConfig(serverConfig: any): BetaFeaturesConfig
     config.toolSearch = serverConfig.betaFeatures.toolSearch;
     config.programmaticToolUse = serverConfig.betaFeatures.programmaticToolUse;
   }
+  // 環境変数で上書き（未設定時のみ）
+  if (typeof process !== "undefined" && process.env?.ENABLE_TOOL_SEARCH === "true" && config.toolSearch === undefined) {
+    config.toolSearch = true;
+  }
 
   if (serverConfig.tools?.deferLoading) {
     config.deferLoading = serverConfig.tools.deferLoading;
