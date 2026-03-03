@@ -188,6 +188,6 @@ GitHub Actions タブで確認:
 
 ## 詳細ドキュメント
 
-- TypeScript CI詳細: `claudedocs/ts-mcp-ci-implementation.md`
-- Python CI詳細: `claudedocs/py-mcp-ci-guide.md`
-- 変更検知の仕組み: `claudedocs/detect-changes-workflow.md`
+- CI/CDアーキテクチャ: [docs/ci-cd/architecture.md](ci-cd/architecture.md)
+- トラブルシューティング: [docs/ci-cd/troubleshooting.md](ci-cd/troubleshooting.md)
+- クイックスタート: [docs/ci-cd/quick-start.md](ci-cd/quick-start.md)

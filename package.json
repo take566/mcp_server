@@ -13,7 +13,9 @@
     "inspector:chrome-devtools": "npx -y @modelcontextprotocol/inspector npx -y chrome-devtools-mcp@latest",
     "inspector:context7": "npx -y @modelcontextprotocol/inspector npx -y @upstash/context7-mcp",
     "inspector:claude-mem": "npx -y @modelcontextprotocol/inspector node mcp_servers/claude-mem/plugin/scripts/mcp-server.cjs",
-    "inspector:kubernetes": "npx -y @modelcontextprotocol/inspector node mcp_servers/mcp-server-kubernetes/dist/index.js"
+    "inspector:kubernetes": "npx -y @modelcontextprotocol/inspector node mcp_servers/mcp-server-kubernetes/dist/index.js",
+    "build:all": "node scripts/build-all.mjs",
+    "sync-sdk": "node scripts/sync-sdk.mjs"
   },
   "repository": {
     "type": "git",

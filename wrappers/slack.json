@@ -1,0 +1,21 @@
+{
+  "name": "slack-mcp",
+  "description": "Slack integration via official MCP server",
+  "upstream": {
+    "package": "@modelcontextprotocol/server-slack",
+    "version": "^2025.4.25"
+  },
+  "auth": {
+    "type": "apiKey",
+    "envVars": ["SLACK_BOT_TOKEN", "SLACK_TEAM_ID"],
+    "notes": "Create a Slack app at https://api.slack.com/apps with Bot Token Scopes: channels:history, channels:read, chat:write, reactions:write, users:read. SLACK_TEAM_ID is found under your workspace settings."
+  },
+  "desktop_config": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-slack"],
+    "env": {
+      "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+      "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
+    }
+  }
+}

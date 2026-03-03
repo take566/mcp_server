@@ -1,167 +1,183 @@
-# MCP Server Collection
+# MCP Server Monorepo
 
-このリポジトリは、Model Context Protocol (MCP) サーバーのコレクションと関連ツールを管理しています。
+Model Context Protocol (MCP) サーバーと開発ツールを管理するモノレポ。各サーバーは MCP SDK の標準パターンに準拠し、Claude Desktop や Codex CLI から利用できる。
 
-##  ディレクトリ構造
+## サーバー一覧
+
+| サーバー | 説明 | 言語 | パッケージマネージャー | ステータス |
+|----------|------|------|----------------------|-----------|
+| [claude-mem](mcp_servers/claude-mem/) | セッション間のメモリ圧縮・永続化 | TypeScript | npm | Active |
+| [gdrive-mcp](mcp_servers/gdrive-mcp/) | Google Drive ファイル操作 | TypeScript | npm | Active |
+| [markdownify-mcp](mcp_servers/markdownify-mcp/) | ファイル→Markdown 変換 | TypeScript + Python | pnpm + uv | Active |
+| [mcp-obsidian-src](mcp_servers/mcp-obsidian-src/) | Obsidian ノート検索 | TypeScript | npm | Active |
+| [mcp-server-kubernetes](mcp_servers/mcp-server-kubernetes/) | Kubernetes クラスタ管理 | TypeScript | bun | Active |
+| [Ollama-mcp](mcp_servers/Ollama-mcp/) | ローカル LLM ブリッジ (Ollama) | TypeScript | pnpm | Active |
+| [notion-mcp-server](mcp_servers/notion-mcp-server/) | Notion 連携 | - | - | wrappers/ に移行予定 |
+| [slack-mcp](mcp_servers/slack-mcp/) | Slack 連携 | - | - | wrappers/ に移行予定 |
+
+設定ファイルベースのラッパー（Notion、Slack）は [`wrappers/`](wrappers/) を参照。
+
+## クイックスタート
+
+### 新規サーバーの作成
+
+```bash
+# 1. テンプレートをコピー
+cp -r mcp_servers/_template mcp_servers/my-server
+
+# 2. package.json の name と description を編集
+cd mcp_servers/my-server
+
+# 3. 依存関係のインストールとビルド
+npm install
+npm run build
+
+# 4. MCP Inspector で動作確認
+npm run inspect
+```
+
+テンプレートのファイル構成とツール追加手順は [`mcp_servers/_template/README.md`](mcp_servers/_template/README.md) を参照。
+
+### 既存サーバーの利用
+
+```bash
+cd mcp_servers/<server-name>
+npm install    # npm の場合（pnpm / bun はサーバーごとに異なる）
+npm run build
+```
+
+## ビルド
+
+### 個別ビルド
+
+```bash
+cd mcp_servers/<server-name>
+npm install && npm run build
+```
+
+パッケージマネージャーはサーバーごとに異なる（上記一覧テーブル参照）。
+
+### 全体ビルド
+
+```bash
+npm run build:all
+```
+
+`scripts/build-all.mjs` が各サーバーのパッケージマネージャーを自動検出し、並列でビルドする。
+
+### MCP SDK バージョン統一
+
+```bash
+npm run sync-sdk
+```
+
+`scripts/sync-sdk.mjs` が全サーバーの `@modelcontextprotocol/sdk` バージョンを最新に揃える。
+
+## テスト・デバッグ
+
+```bash
+# MCP Inspector（任意のサーバー）
+npx @modelcontextprotocol/inspector node mcp_servers/<server-name>/dist/index.js
+
+# ルート package.json のショートカット
+npm run inspector:claude-mem
+npm run inspector:kubernetes
+```
+
+## Claude Desktop 設定
+
+### 設定ファイルの場所
+
+| OS | パス |
+|----|------|
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+
+### 設定例
+
+```json
+{
+  "mcpServers": {
+    "claude-mem": {
+      "command": "node",
+      "args": ["D:/work/mcp_server/mcp_servers/claude-mem/dist/index.js"],
+      "env": {}
+    },
+    "ollama": {
+      "command": "node",
+      "args": ["D:/work/mcp_server/mcp_servers/Ollama-mcp/dist/index.js"],
+      "env": {
+        "OLLAMA_HOST": "http://localhost:11434"
+      }
+    }
+  }
+}
+```
+
+プラットフォーム別の完全な設定例:
+- Windows: [`configs/win_config/`](configs/win_config/)
+- macOS: [`configs/mac/`](configs/mac/)
+
+## プロジェクト構造
 
 ```
 mcp_server/
-├── mcp_servers/          # MCPサーバーのコレクション
-│   ├── claude-mem/                       # Claude Memory（セッション永続化）
-│   ├── filesystem-mcp/                   # ファイルシステムMCP
-│   ├── gdrive-mcp/                       # Google Drive MCP
-│   ├── markdownify-mcp/                  # Markdown変換MCP
-│   ├── mcp-obsidian/                     # Obsidian MCP
-│   ├── mcp-server-kubernetes/            # Kubernetes MCP
-│   ├── notion-mcp-server/                # Notion MCP
-│   ├── Ollama-mcp/                       # Ollama LLM統合
-│   ├── puppeteer-mcp/                    # Puppeteerブラウザ制御
-│   └── slack-mcp/                        # Slack MCP
-├── tools/                # 開発・管理ツール
-│   ├── llm-script/                       # LLM関連スクリプト
-│   ├── mcp-tool-utils.ts                 # MCP Tool Utilities (Tool Search & Programmatic Tool Use)
-│   ├── vscode-extensions-manager.py      # VS Code拡張機能管理
-│   └── *-extensions.*                    # 拡張機能管理スクリプト
-├── configs/              # 設定ファイル
-│   ├── config.toml                       # Codex CLI設定
-│   ├── example_beta_features_config.json # ベータ機能設定例
-│   ├── mac/                              # Mac用設定
-│   └── win_config/                       # Windows用設定
-├── examples/             # サンプルコード
-│   └── tool-search-example.ts            # Tool Search使用例
-├── docs/                 # ドキュメント
-│   ├── AGENTS.md                         # エージェント情報
-│   ├── CLAUDE.md                         # Claude設定
-│   ├── TOOL_SEARCH_AND_PROGRAMMATIC_TOOL_USE.md  # Tool Search & Programmatic Tool Use
-│   └── mem.md                            # メモ
-└── README.md             # このファイル
+├── mcp_servers/           # MCP サーバー実装
+│   ├── _template/         # 新規サーバーテンプレート
+│   ├── claude-mem/        # メモリ圧縮・永続化 (TS, npm)
+│   ├── gdrive-mcp/        # Google Drive 操作 (TS, npm)
+│   ├── markdownify-mcp/   # Markdown 変換 (TS+Python, pnpm+uv)
+│   ├── mcp-obsidian-src/  # Obsidian ノート検索 (TS, npm)
+│   ├── mcp-server-kubernetes/ # Kubernetes 管理 (TS, bun)
+│   └── Ollama-mcp/        # ローカル LLM ブリッジ (TS, pnpm)
+├── wrappers/              # 設定ファイルベースのラッパー
+│   ├── notion.json
+│   ├── slack.json
+│   └── README.md
+├── tools/                 # 開発ユーティリティ
+│   └── llm-script/        # LLM キャッシュ (Python, uv)
+├── configs/               # 共有設定
+│   ├── tsconfig.base.json # TypeScript 共通設定
+│   ├── mac/               # macOS Claude Desktop 設定
+│   └── win_config/        # Windows Claude Desktop 設定
+├── scripts/               # ビルド・ユーティリティ
+│   ├── build-all.mjs      # 全サーバー並列ビルド
+│   └── sync-sdk.mjs       # MCP SDK バージョン統一
+├── docs/                  # ドキュメント
+│   ├── index.md           # ドキュメント目次
+│   ├── ci-cd/             # CI/CD 関連
+│   └── ...
+├── .github/workflows/     # CI/CD
+│   └── ci.yml             # 統合 CI ワークフロー
+└── package.json           # ルート設定
 ```
 
-##  利用可能なMCPサーバー
+### サーバー共通パターン
 
-### 必須MCPサーバー（推奨）
+TypeScript サーバーは以下のファイル構成に準拠する:
 
-以下のMCPサーバーは、開発ワークフローで特に重要です：
-
-- **claude-mem**: Claude Codeのセッション間でコンテキストを永続化
-- **context7**: 最新のライブラリドキュメントとコード例を取得（Upstash）
-- **serena**: セマンティックコーディングツール（シンボル検索・編集）
-- **byterover**: 知識ベース管理（プロジェクト知識の保存・取得）
-
-詳細なセットアップ手順は `docs/MCP_SERVERS_SETUP.md` を参照してください。
-
-### システム・ファイル操作
-- **filesystem-mcp**: ファイルシステム操作
-- **mcp-obsidian**: Obsidian連携
-- **markdownify-mcp**: Markdown変換
-
-### ブラウザ自動化
-- **puppeteer-mcp**: Puppeteerを使用したブラウザ制御
-
-### クラウド・API連携
-- **gdrive-mcp**: Google Drive連携
-- **notion-mcp-server**: Notion連携
-- **slack-mcp**: Slack連携
-
-### インフラ・開発
-- **mcp-server-kubernetes**: Kubernetes管理
-- **Ollama-mcp**: Ollama LLM統合
-
-##  設定
-
-### Codex CLI設定
-
-`configs/config.toml` ファイルでMCPサーバーを設定できます：
-
-```toml
-[mcp_servers.serena]
-type = "stdio"
-command = "uv"
-args = ["run", "serena-mcp-server", "--port", "32123"]
-description = "Serena MCP: Semantic coding tools for intelligent symbol search and editing"
+```
+src/
+  index.ts       # エントリポイント (stdio transport)
+  server.ts      # サーバー設定・ツール登録
+  tools/         # ツールハンドラー
+  types.ts       # 型定義
 ```
 
-### Claude Desktop設定
+tsconfig 共通設定: `configs/tsconfig.base.json` (ES2022, NodeNext, strict)
 
-- Windows: `configs/win_config/claude_desktop_config.json`
-- Mac: `configs/mac/claude_desktop_config.json`
+## 開発ガイド
 
-### Tool Search & Programmatic Tool Use（ベータ機能）
+詳細なドキュメントは [`docs/index.md`](docs/index.md) を参照。
 
-Anthropicのベータ機能であるTool SearchとProgrammatic Tool Useをサポートしています：
+| ドキュメント | 内容 |
+|-------------|------|
+| [adding-new-mcp-server.md](docs/adding-new-mcp-server.md) | 新規サーバー追加の手順 |
+| [MCP_SERVERS_SETUP.md](docs/MCP_SERVERS_SETUP.md) | 各サーバーのセットアップ |
+| [MCP_INSPECTOR.md](docs/MCP_INSPECTOR.md) | MCP Inspector によるデバッグ |
+| [MCP_ERROR_FIXES.md](docs/MCP_ERROR_FIXES.md) | よくあるエラーと対処法 |
+| [ci-cd/quick-start.md](docs/ci-cd/quick-start.md) | CI/CD の概要 |
 
-- **Tool Search**: セッション開始時のトークン消費を85%削減
-- **Programmatic Tool Use**: 複雑なマルチツールタスクで37%のトークン削減
+## ライセンス
 
-設定例は `configs/example_beta_features_config.json` を参照してください。
-詳細は `docs/TOOL_SEARCH_AND_PROGRAMMATIC_TOOL_USE.md` を参照してください。
-
-##  ツール
-
-### VS Code拡張機能管理
-
-`tools/` ディレクトリには、VS Code拡張機能の管理ツールが含まれています：
-
-- 拡張機能リストの出力・インポート
-- クロスプラットフォーム対応（Windows/Mac/Linux）
-- Python、PowerShell、シェルスクリプト対応
-
-詳細は `tools/vscode-extensions-manager.py` を参照してください。
-
-### LLMスクリプト
-
-`tools/llm-script/` には、LLM関連のスクリプトとキャッシュ機能が含まれています。
-
-### MCP Tool Utilities
-
-`tools/mcp-tool-utils.ts` には、Tool SearchとProgrammatic Tool Useのベータ機能をサポートするユーティリティ関数が含まれています：
-
-- `createDeferredTool()`: defer_loadingフラグを設定したツールを作成
-- `createProgrammaticTool()`: Programmatic Tool Useをサポートするツールを作成
-- `createAdvancedTool()`: 両方の機能をサポートするツールを作成
-
-詳細は `docs/TOOL_SEARCH_AND_PROGRAMMATIC_TOOL_USE.md` を参照してください。
-
-##  ドキュメント
-
-`docs/` ディレクトリには、プロジェクトに関する詳細なドキュメントが含まれています。
-
-### 主要ドキュメント
-
-- **TOOL_SEARCH_AND_PROGRAMMATIC_TOOL_USE.md**: Tool SearchとProgrammatic Tool Useのベータ機能の使用方法
-- **AGENTS.md**: エージェント情報
-- **CLAUDE.md**: Claude設定
-- **AI_CODING_ENVIRONMENT.md**: AIコーディング環境の構築手順
-
-##  セットアップ
-
-1. 必要なMCPサーバーを選択
-2. 各サーバーのREADMEを参照してセットアップ
-3. `.mcp.json` または `configs/config.toml` で設定を追加
-4. Claude DesktopまたはCodex CLIで利用開始
-5. **必須MCPサーバーのセットアップ**: `docs/MCP_SERVERS_SETUP.md` を参照
-6. AIコーディング環境全体の構築手順は `docs/AI_CODING_ENVIRONMENT.md` を参照
-
-### クイックスタート（必須MCPサーバー）
-
-1. **Claude Mem**
-   - `mcp_servers/claude-mem`にクローン・ビルド済み
-   - `configs/win_config/claude_desktop_config.json`に設定
-
-2. **Context7**
-   - [context7.com/dashboard](https://context7.com/dashboard)でAPIキーを取得
-   - `.mcp.json`の`context7.env.CONTEXT7_API_KEY`に設定
-
-3. **Serena**
-   - セマンティックコーディングツール（シンボル検索・編集）
-   - `configs/win_config/claude_desktop_config.json`に設定済み
-
-4. **Byterover**
-   - 知識ベース管理（プロジェクト知識の保存・取得）
-   - `configs/win_config/claude_desktop_config.json`に設定済み
-
-詳細は `docs/MCP_SERVERS_SETUP.md` を参照してください。
-
-##  ライセンス
-
-各MCPサーバーは個別のライセンスに従います。詳細は各サーバーのREADMEを参照してください。
+MIT (ルートリポジトリ)。各サーバーは個別のライセンスに従う場合がある。詳細は各サーバーの README を参照。

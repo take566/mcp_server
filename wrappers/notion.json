@@ -1,0 +1,20 @@
+{
+  "name": "notion-mcp",
+  "description": "Notion integration via official MCP server",
+  "upstream": {
+    "package": "@notionhq/notion-mcp-server",
+    "version": "^1.9.1"
+  },
+  "auth": {
+    "type": "apiKey",
+    "envVar": "NOTION_API_KEY",
+    "notes": "Create an integration at https://www.notion.so/my-integrations and grant it access to the target pages/databases."
+  },
+  "desktop_config": {
+    "command": "npx",
+    "args": ["-y", "@notionhq/notion-mcp-server"],
+    "env": {
+      "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ${NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\"}"
+    }
+  }
+}
