@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-browser"
+version = "0.1.0"
+description = "Agent Browser - LLM-driven browser automation with Playwright and Anthropic"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.40.0",
+    "anthropic>=0.39.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8.0",
+]
+
+[project.scripts]
+agent-browser = "agent_browser.main:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
