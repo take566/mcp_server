@@ -57,3 +57,12 @@ mcp_servers/Ollama-mcp
 # .kiro/steering はドキュメント管理対象なので除外しない
 .grepai/
 .grepai-verify/
+mcp_servers/claude-mem
+mcp_servers/claude-mem
+mcp_servers/mcp-obsidian-src
+mcp_servers/mcp-obsidian-src
+mcp_servers/markdownify-mcp
+tools/llm-script
+mcp_servers/claude-mem
+tools/llm-script
+mcp_servers/Ollama-mcp
