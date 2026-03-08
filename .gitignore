@@ -67,3 +67,4 @@ mcp_servers/claude-mem
 tools/llm-script
 mcp_servers/Ollama-mcp
 mcp_servers/claude-mem
+mcp_servers/claude-mem
