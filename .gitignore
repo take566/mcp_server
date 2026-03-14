@@ -68,3 +68,8 @@ tools/llm-script
 mcp_servers/Ollama-mcp
 mcp_servers/claude-mem
 mcp_servers/claude-mem
+mcp_servers/claude-mem
+mcp_servers/markdownify-mcp
+mcp_servers/mcp-server-kubernetes
+mcp_servers/mcp-obsidian-src
+tools/llm-script
