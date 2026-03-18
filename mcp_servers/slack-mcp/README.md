@@ -1,5 +1,10 @@
 # slack-mcp
 
+> **DEPRECATED**: The upstream package `@modelcontextprotocol/server-slack` has been deprecated on npm. This server may stop working in the future. Consider alternatives:
+> - Official Slack MCP (if available)
+> - Custom implementation using `@modelcontextprotocol/sdk` + `@slack/web-api`
+> - Remote MCP servers via SSE
+
 > **Migrated**: This wrapper has been migrated to a configuration-based definition at [`wrappers/slack.json`](../../wrappers/slack.json). This directory is retained for backward compatibility only.
 
 ## What this is

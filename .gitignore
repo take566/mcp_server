@@ -1,8 +1,9 @@
 # Environment variables
 .env
-
-# Configuration files with secrets
-
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Logs
 *.log
@@ -10,76 +11,53 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Dependency directories
+# Dependencies
 node_modules/
 jspm_packages/
-data/
-
-# Optional npm cache directory
 .npm
 
-# Optional eslint cache
-.eslintcache
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
+# Build output & packaging
 *.tgz
 
-# dotenv environment variable files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Data
+data/
 
-# IDE files
+# Linting & REPL
+.eslintcache
+.node_repl_history
+
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# User home directory (to prevent accidental commits)
-~/
+# Claude / AI tool configs
+.claude/
 .clinerules/byterover-rules.md
 .kilocode/rules/byterover-rules.md
 .roo/rules/byterover-rules.md
 .windsurf/rules/byterover-rules.md
 .cursor/rules/byterover-rules.mdc
 .kiro/steering/byterover-rules.md
+# .kiro/steering はドキュメント管理対象なので除外しない
+.kiro/settings/
 .qoder/rules/byterover-rules.md
 .augment/rules/byterover-rules.md
-# Windows reserved device names (cannot be created as files on Windows)
-nul
-configs/win_config/nul
-mcp_servers/Ollama-mcp
-.claude/
-.kiro/settings/
-# .kiro/steering はドキュメント管理対象なので除外しない
 .grepai/
 .grepai-verify/
-mcp_servers/claude-mem
-mcp_servers/claude-mem
-mcp_servers/mcp-obsidian-src
-mcp_servers/mcp-obsidian-src
-mcp_servers/markdownify-mcp
-tools/llm-script
-mcp_servers/claude-mem
-tools/llm-script
-mcp_servers/Ollama-mcp
-mcp_servers/claude-mem
-mcp_servers/claude-mem
+
+# Windows reserved device names
+nul
+configs/win_config/nul
+
+# User home directory (prevent accidental commits)
+~/
+
+# Removed submodules (git still tracks these paths)
 mcp_servers/claude-mem
 mcp_servers/markdownify-mcp
+mcp_servers/mcp-obsidian-src
 mcp_servers/mcp-server-kubernetes
-mcp_servers/mcp-obsidian-src
-tools/llm-script
-mcp_servers/claude-mem
-mcp_servers/markdownify-mcp
-mcp_servers/mcp-obsidian-src
-tools/llm-script
 mcp_servers/Ollama-mcp
-mcp_servers/mcp-server-kubernetes
-mcp_servers/mcp-obsidian-src
-mcp_servers/markdownify-mcp
-mcp_servers/claude-mem
+tools/llm-script
