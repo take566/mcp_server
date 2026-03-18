@@ -13,6 +13,7 @@ yarn-error.log*
 # Dependency directories
 node_modules/
 jspm_packages/
+data/
 
 # Optional npm cache directory
 .npm
@@ -67,4 +68,18 @@ mcp_servers/claude-mem
 tools/llm-script
 mcp_servers/Ollama-mcp
 mcp_servers/claude-mem
+mcp_servers/claude-mem
+mcp_servers/claude-mem
+mcp_servers/markdownify-mcp
+mcp_servers/mcp-server-kubernetes
+mcp_servers/mcp-obsidian-src
+tools/llm-script
+mcp_servers/claude-mem
+mcp_servers/markdownify-mcp
+mcp_servers/mcp-obsidian-src
+tools/llm-script
+mcp_servers/Ollama-mcp
+mcp_servers/mcp-server-kubernetes
+mcp_servers/mcp-obsidian-src
+mcp_servers/markdownify-mcp
 mcp_servers/claude-mem
