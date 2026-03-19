@@ -54,10 +54,7 @@ configs/win_config/nul
 # User home directory (prevent accidental commits)
 ~/
 
-# Removed submodules (git still tracks these paths)
-mcp_servers/claude-mem
-mcp_servers/markdownify-mcp
-mcp_servers/mcp-obsidian-src
-mcp_servers/mcp-server-kubernetes
-mcp_servers/Ollama-mcp
-tools/llm-script
+# OAuth / API credentials (never commit secrets)
+**/gcp-oauth.keys.json
+**/credentials.json
+**/token.json

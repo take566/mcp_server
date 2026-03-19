@@ -23,7 +23,7 @@ Codexにチームを作成してチームで仕事をするように依頼して
 
 ## Commands
 
-**TypeScript**: `npm install` (default) / `pnpm install` (Ollama, markdownify) / `bun install` (k8s) → `npm run build` → `node dist/index.js`
+**TypeScript**: `npm install` → `npm run build` → `node dist/index.js`
 **Python**: `uv sync` → `python main.py`
 **Testing**: `npx @modelcontextprotocol/inspector` or `npx mcp-chat --server "./dist/index.js"`
 
@@ -56,6 +56,5 @@ Pattern: `{ "command": "node", "args": ["full/path/dist/index.js"], "env": { "KE
 ## Gotchas
 
 - Windows: use `rm` not `del` in bash shell
-- Submodules: 6 submodules tracked — run `git submodule update --init` after clone
-- Package managers vary by server: npm (default), pnpm (Ollama, markdownify), bun (k8s)
+- OAuth credentials (`gcp-oauth.keys.json` etc.) must never be committed — use `.gitignore`
 - **コネクタ・APIキー**: GitHub/Brave/GA/Notion/Cipher/Google Drive の再接続・トークン設定は [`docs/TROUBLESHOOTING_CONNECTORS_AND_KEYS.md`](docs/TROUBLESHOOTING_CONNECTORS_AND_KEYS.md) を参照

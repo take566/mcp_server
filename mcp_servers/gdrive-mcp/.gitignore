@@ -1,0 +1,5 @@
+# OAuth credentials (never commit secrets)
+gcp-oauth.keys.json
+credentials.json
+token.json
+*.keys.json
