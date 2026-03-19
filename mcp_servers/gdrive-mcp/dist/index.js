@@ -83,6 +83,8 @@ const getExportMimeType = (mimeType) => {
     return exportMap[mimeType] || null;
 };
 class GDriveServer {
+    server;
+    drive;
     constructor() {
         this.server = new Server({
             name: 'gdrive-server',
@@ -259,3 +261,4 @@ else {
     const server = new GDriveServer();
     server.run().catch(console.error);
 }
+//# sourceMappingURL=index.js.map
