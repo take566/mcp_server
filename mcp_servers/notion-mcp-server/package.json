@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@notionhq/notion-mcp-server": "^1.9.1"
+    "@notionhq/notion-mcp-server": "^2.2.1"
   }
 }

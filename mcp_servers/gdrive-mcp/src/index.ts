@@ -13,7 +13,6 @@ import { google, drive_v3 } from 'googleapis';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import * as url from 'url';
 import { exec } from 'child_process';
 
 // 環境変数からパスを取得するか、デフォルト値を使用
@@ -54,8 +53,8 @@ const authenticate = async () => {
   // ローカルサーバーを起動して認証コードを受け取る
   const server = http.createServer(async (req, res) => {
     try {
-      const parsedUrl = url.parse(req.url || '', true);
-      const code = parsedUrl.query.code as string;
+      const parsedUrl = new URL(req.url || '', 'http://localhost:3000');
+      const code = parsedUrl.searchParams.get('code');
 
       if (code) {
         res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -139,8 +138,12 @@ class GDriveServer {
     this.setupToolHandlers();
     
     // エラーハンドリング
-    this.server.onerror = (error: any) => console.error('[MCP Error]', error);
+    this.server.onerror = (error) => console.error('[MCP Error]', error);
     process.on('SIGINT', async () => {
+      await this.server.close();
+      process.exit(0);
+    });
+    process.on('SIGTERM', async () => {
       await this.server.close();
       process.exit(0);
     });
@@ -155,7 +158,7 @@ class GDriveServer {
     // リソース読み取り
     this.server.setRequestHandler(
       ReadResourceRequestSchema,
-      async (request: any) => {
+      async (request) => {
         const match = request.params.uri.match(/^gdrive:\/\/\/(.+)$/);
         if (!match) {
           throw new McpError(
@@ -243,7 +246,7 @@ class GDriveServer {
       ],
     }));
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       if (request.params.name !== 'search') {
         throw new McpError(
           ErrorCode.MethodNotFound,
@@ -267,7 +270,7 @@ class GDriveServer {
         });
 
         const files = response.data.files || [];
-        const formattedResults = files.map((file: any) => ({
+        const formattedResults = files.map((file) => ({
           id: file.id,
           name: file.name,
           mimeType: file.mimeType,

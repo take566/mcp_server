@@ -6,7 +6,6 @@ import { google } from 'googleapis';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
-import * as url from 'url';
 import { exec } from 'child_process';
 // 環境変数からパスを取得するか、デフォルト値を使用
 const OAUTH_PATH = process.env.GDRIVE_OAUTH_PATH || path.join(process.cwd(), 'gcp-oauth.keys.json');
@@ -41,8 +40,8 @@ const authenticate = async () => {
     // ローカルサーバーを起動して認証コードを受け取る
     const server = http.createServer(async (req, res) => {
         try {
-            const parsedUrl = url.parse(req.url || '', true);
-            const code = parsedUrl.query.code;
+            const parsedUrl = new URL(req.url || '', 'http://localhost:3000');
+            const code = parsedUrl.searchParams.get('code');
             if (code) {
                 res.writeHead(200, { 'Content-Type': 'text/html' });
                 res.end('<h1>認証が完了しました。このウィンドウを閉じてください。</h1>');
@@ -119,6 +118,10 @@ class GDriveServer {
         // エラーハンドリング
         this.server.onerror = (error) => console.error('[MCP Error]', error);
         process.on('SIGINT', async () => {
+            await this.server.close();
+            process.exit(0);
+        });
+        process.on('SIGTERM', async () => {
             await this.server.close();
             process.exit(0);
         });
