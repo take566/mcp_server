@@ -8,6 +8,7 @@
 | [MCP_INSPECTOR.md](MCP_INSPECTOR.md) | MCP Inspector testing and debugging guide |
 | [AI_CODING_ENVIRONMENT.md](AI_CODING_ENVIRONMENT.md) | AI coding environment setup (tools, workflows, mmcp) |
 | [adding-new-mcp-server.md](adding-new-mcp-server.md) | Step-by-step guide for adding new TypeScript/Python MCP servers |
+| [CLAUDE_CODE_PLUGINS.md](CLAUDE_CODE_PLUGINS.md) | Curated Claude Code plugin recommendations for this monorepo |
 
 ## CI/CD
 
