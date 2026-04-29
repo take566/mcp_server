@@ -10,7 +10,7 @@
     "auth": "node ./dist/index.js auth"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "googleapis": "^171.0.0"
   },
   "devDependencies": {
