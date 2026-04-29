@@ -7,7 +7,7 @@ Claude Code の `/plugin` で導入できるプラグインのうち、**この 
 ## 設計方針
 
 - **既存 MCP サーバーと重複するものは入れない**
-  本リポでは `chrome-devtools`, `context7`, `slack-mcp`, `claude-mem`, `serena`, `arxiv` などを既に MCP として運用中 (`.mcp.json` 参照)。同名プラグインを入れると機能と context token が二重に乗るので避ける。
+  本リポでは `chrome-devtools`, `context7`, `claude-mem`, `serena`, `arxiv` などを既に MCP として運用中 (`.mcp.json` 参照)。Slack/Notion/Linear 等は claude.ai 経由のホスト型 MCP で利用可能。同名プラグインを入れると機能と context token が二重に乗るので避ける。
 - **既存スキルと重複するものは入れない**
   `/review`, `/security-review` などは既に利用可。Code Review プラグインは不要。
 - **3〜5 個ルールを厳守**
@@ -52,7 +52,7 @@ Claude Code の `/plugin` で導入できるプラグインのうち、**この 
 | 14 | Chrome DevTools       | 既に MCP として導入済                         |
 | 15 | Playwright            | UI テストは本リポ対象外                       |
 | 25 | GitHub                | `github-mcp-server` で代替                    |
-| 26 | Slack                 | `slack-mcp` で代替                            |
+| 26 | Slack                 | claude.ai 経由の Slack MCP で代替可           |
 | 31-36 | Knowledge Work系   | 業務系。本リポは開発ツール                    |
 
 ## インストール手順
