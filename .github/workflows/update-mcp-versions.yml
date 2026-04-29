@@ -24,6 +24,11 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Update @modelcontextprotocol/* in each package
         run: |
           dirs=(
@@ -42,7 +47,9 @@ jobs:
               (
                 cd "$dir" \
                 && npx --yes npm-check-updates -u --target newest -f "@modelcontextprotocol/*" \
-                && if [ -f package-lock.json ]; then
+                && if [ -f pnpm-lock.yaml ]; then
+                     pnpm install --lockfile-only --no-frozen-lockfile
+                   elif [ -f package-lock.json ]; then
                      npm install --package-lock-only --ignore-scripts
                    fi
               )
