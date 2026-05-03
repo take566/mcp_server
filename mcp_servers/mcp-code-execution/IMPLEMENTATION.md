@@ -138,5 +138,5 @@ const filtered = allRows.filter(row => row.status === 'pending');
 - [ ] トークン化機能（PIIの自動トークン化）
 - [ ] スキルシステム（再利用可能なコードパターンの保存）
 - [ ] 検索機能（ツール検索API）
-- [ ] エラーハンドリングの改善
-- [ ] テストスイートの追加
+- [x] エラーハンドリングの改善（`MCPClientError` / `code` 付き — `src/errors.ts`, `src/client.ts`）
+- [x] テストスイートの追加（`npm test` — `src/client.test.ts`）
