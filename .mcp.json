@@ -2,14 +2,13 @@
   "mcpServers": {
     "chrome-devtools": {
       "type": "stdio",
-      "command": "cmd",
+      "command": "node",
       "args": [
-        "/c",
-        "npx",
-        "-y",
-        "chrome-devtools-mcp@latest"
+        "D:/work/mcp_server/mcp_servers/chrome-devtools-mcp/dist/index.js"
       ],
-      "env": {}
+      "env": {
+        "CHROME_CDP_PORT": "9222"
+      }
     },
     "claude-mem": {
       "type": "stdio",
@@ -34,6 +33,10 @@
       "type": "sse",
       "url": "http://127.0.0.1:3845/mcp"
     },
+    "storybook": {
+      "type": "sse",
+      "url": "http://127.0.0.1:6006/mcp"
+    },
     "gemini-cli": {
       "type": "stdio",
       "command": "cmd",
@@ -41,7 +44,8 @@
         "/c",
         "npx",
         "-y",
-        "@choplin/mcp-gemini-cli"
+        "@choplin/mcp-gemini-cli",
+        "--allow-npx"
       ],
       "env": {}
     },
@@ -56,12 +60,37 @@
       ],
       "env": {}
     },
+    "colab-proxy-mcp": {
+      "type": "stdio",
+      "command": "py",
+      "args": [
+        "-m",
+        "uv",
+        "tool",
+        "run",
+        "--from",
+        "git+https://github.com/googlecolab/colab-mcp",
+        "colab-mcp"
+      ],
+      "env": {}
+    },
+    "arxiv": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "D:/work/mcp_server/mcp_servers/arxiv-mcp/dist/index.js"
+      ],
+      "env": {}
+    },
     "serena": {
       "type": "stdio",
-      "command": "uvx",
+      "command": "py",
       "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
+        "-m",
+        "uv",
+        "run",
+        "--directory",
+        "D:/work/serena",
         "serena",
         "start-mcp-server"
       ],

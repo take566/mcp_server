@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { MCPClientError } from './errors.js';
 
 // Response schemas for MCP client requests
 const CallToolResponseSchema = z.object({
@@ -82,8 +83,17 @@ export class MCPClient {
       return;
     }
 
-    await this.client.connect(this.transport);
-    this.connected = true;
+    try {
+      await this.client.connect(this.transport);
+      this.connected = true;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new MCPClientError(
+        `Failed to connect to MCP server (${this.config.command}): ${msg}`,
+        'CONNECTION_FAILED',
+        { cause: error }
+      );
+    }
   }
 
   /**
@@ -108,7 +118,15 @@ export class MCPClient {
 
       return result as CallToolResult;
     } catch (error) {
-      throw new Error(`Failed to call tool "${toolName}": ${error instanceof Error ? error.message : String(error)}`);
+      if (error instanceof MCPClientError) {
+        throw error;
+      }
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new MCPClientError(
+        `Failed to call tool "${toolName}": ${msg}`,
+        'TOOL_CALL_FAILED',
+        { cause: error }
+      );
     }
   }
 
@@ -120,14 +138,20 @@ export class MCPClient {
       await this.connect();
     }
 
-    const result = await this.client.request(
-      {
-        method: 'tools/list',
-      },
-      ListToolsResponseSchema
-    );
-
-    return result;
+    try {
+      const result = await this.client.request(
+        {
+          method: 'tools/list',
+        },
+        ListToolsResponseSchema
+      );
+      return result;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new MCPClientError(`Failed to list tools: ${msg}`, 'LIST_TOOLS_FAILED', {
+        cause: error,
+      });
+    }
   }
 
   /**
@@ -167,7 +191,10 @@ class MCPClientRegistry {
   async callTool(serverName: string, toolName: string, args: Record<string, any>): Promise<CallToolResult> {
     const client = this.getClient(serverName);
     if (!client) {
-      throw new Error(`MCP server "${serverName}" not found`);
+      throw new MCPClientError(
+        `MCP server "${serverName}" not found`,
+        'SERVER_NOT_FOUND'
+      );
     }
     return await client.callTool(toolName, args);
   }
@@ -200,7 +227,7 @@ export async function callMCPTool<T = any>(
       const errorText = result.content
         ?.map((c) => (c.type === 'text' ? c.text : ''))
         .join('\n') || 'Unknown error';
-      throw new Error(`MCP tool error: ${errorText}`);
+      throw new MCPClientError(`MCP tool error: ${errorText}`, 'MCP_TOOL_ERROR');
     }
 
     // Extract text content from result
@@ -227,9 +254,16 @@ export async function callMCPTool<T = any>(
 
     return textContent as T;
   } catch (error) {
+    if (error instanceof MCPClientError) {
+      throw error;
+    }
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error(`Unexpected error calling MCP tool: ${String(error)}`);
+    throw new MCPClientError(
+      `Unexpected error calling MCP tool: ${String(error)}`,
+      'TOOL_CALL_FAILED',
+      { cause: error }
+    );
   }
 }

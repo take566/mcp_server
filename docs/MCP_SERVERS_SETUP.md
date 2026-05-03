@@ -199,7 +199,46 @@ Figmaデザインファイルからコンテキストを取得し、コード生
 
 ---
 
-### 5. grepai
+### 5. Storybook MCP
+
+[Storybook](https://storybook.js.org/) の AI 機能（manifests と MCP）に接続し、コンポーネント一覧・ドキュメント・ストーリー作成支援・テスト実行などのツールをエージェントから使えます。**現状は React プロジェクトが前提**（[プレビュー機能](https://storybook.js.org/docs/releases/features#preview)）。
+
+#### セットアップ
+
+1. **対象プロジェクト（React + Storybook）でアドオンを追加**
+
+   ```bash
+   npx storybook add @storybook/addon-mcp
+   ```
+
+2. **Storybook を起動**
+
+   デフォルトでは `http://localhost:6006` で dev サーバーが立ち上がり、MCP は **`http://127.0.0.1:6006/mcp`**（ポートは `--port` や設定で変わる場合あり）。
+
+3. **Cursor の設定**
+
+   リポジトリの `.mcp.json` に以下が含まれています（ポートを変えた場合は `url` を合わせて変更してください）。
+
+   ```json
+   "storybook": {
+     "type": "sse",
+     "url": "http://127.0.0.1:6006/mcp"
+   }
+   ```
+
+4. **利用前の確認**
+
+   - ブラウザで `http://127.0.0.1:6006/mcp` を開き、ツール一覧が表示されることを確認
+   - MCP を使うときは **Storybook の dev サーバーが起動したまま**にする
+
+#### 参考リンク
+
+- [MCP server（概要・ツール一覧）](https://storybook.js.org/docs/ai/mcp/overview)
+- [Self-host / `@storybook/mcp` パッケージ](https://github.com/storybookjs/mcp/blob/main/packages/mcp/README.md)（独自 HTTP サーバーに組み込む場合）
+
+---
+
+### 6. grepai
 
 コードの意味に基づくセマンティック検索とコールグラフ追跡を提供するMCPサーバーです。自然言語でコードを検索し、関数の呼び出し元・呼び出し先を追跡できます。100%ローカル（Ollama）またはクラウド（OpenAI）のEmbedderに対応しています。
 
@@ -291,7 +330,7 @@ Figmaデザインファイルからコンテキストを取得し、コード生
 
 ---
 
-### 6. Draw.io MCP
+### 7. Draw.io MCP
 
 [draw.io](https://www.draw.io) 公式の MCP サーバーです。LLM が draw.io エディタで図を開いたり作成したりできるようにします。XML（draw.io ネイティブ）、CSV（組織図・フローチャート等）、Mermaid.js 形式をサポートし、URL からコンテンツを取得することもできます。
 
@@ -414,6 +453,11 @@ npm run inspector:claude-mem   # Claude Mem
 - **問題**: サーバーに接続できない
   - **解決策**: FigmaデスクトップアプリでMCPサーバーが有効になっているか確認。`http://127.0.0.1:3845/mcp`にアクセスできるか確認。
 
+### Storybook MCP
+
+- **問題**: Cursor から接続できない・ツールが空
+  - **解決策**: 対象の React プロジェクトで `npx storybook add @storybook/addon-mcp` を実行済みか確認。Storybook の dev サーバーを起動し、`.mcp.json` の `url` のポートが実際の Storybook（例: `6006`）と一致しているか確認。
+
 ### grepai
 
 - **問題**: 検索結果が空、または「インデックスがない」と出る
@@ -438,6 +482,7 @@ npm run inspector:claude-mem   # Claude Mem
 
 ## 更新履歴
 
+- 2025-03-27: Storybook MCP（`.mcp.json` の SSE 接続とセットアップ手順）
 - 2025-02-XX: Draw.io MCP統合
   - @drawio/mcp のセットアップ手順とMCP設定を追加
 - 2025-02-XX: grepai MCP統合

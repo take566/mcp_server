@@ -1,4 +1,10 @@
 {
+  "preferences": {
+    "coworkWebSearchEnabled": true,
+    "ccdScheduledTasksEnabled": true,
+    "coworkScheduledTasksEnabled": true,
+    "sidebarMode": "task"
+  },
   "mcpServers": {
     "filesystem": {
       "command": "C:\\Program Files\\nodejs\\node.exe",
@@ -68,31 +74,98 @@
       "command": "npx",
       "args": [
         "-y",
-        "@block/code-mcp@latest"
+        "code-mcp@latest"
       ]
     },
+    "chrome-devtools": {
+      "command": "node",
+      "args": [
+        "D:/work/mcp_server/mcp_servers/chrome-devtools-mcp/dist/index.js"
+      ],
+      "env": {
+        "CHROME_CDP_PORT": "9222"
+      }
+    },
+    "arxiv": {
+      "command": "node",
+      "args": [
+        "D:/work/mcp_server/mcp_servers/arxiv-mcp/dist/index.js"
+      ],
+      "env": {}
+    },
+    "claude-mem": {
+      "command": "node",
+      "args": [
+        "d:\\work\\mcp_server\\mcp_servers\\claude-mem\\plugin\\scripts\\mcp-server.cjs"
+      ],
+      "env": {}
+    },
     "context7": {
-      "command": "npx",
-      "args": ["--yes", "@upstash/context7-mcp"],
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {}
+    },
+    "figma-desktop": {
+      "url": "http://127.0.0.1:3845/mcp"
+    },
+    "storybook": {
+      "url": "http://127.0.0.1:6006/mcp"
+    },
+    "gemini-cli": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@choplin/mcp-gemini-cli",
+        "--allow-npx"
+      ],
+      "env": {}
+    },
+    "drawio": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@drawio/mcp"
+      ],
+      "env": {}
+    },
+    "colab-proxy-mcp": {
+      "command": "py",
+      "args": [
+        "-m",
+        "uv",
+        "tool",
+        "run",
+        "--from",
+        "git+https://github.com/googlecolab/colab-mcp",
+        "colab-mcp"
+      ],
       "env": {}
     },
     "serena": {
-      "command": "uv",
+      "command": "py",
       "args": [
+        "-m",
+        "uv",
         "run",
         "--directory",
         "D:/work/serena",
-        "serena-mcp-server",
-        "--transport",
-        "sse",
-        "--port",
-        "32123"
+        "serena",
+        "start-mcp-server"
       ],
-      "port": 32123,
       "env": {
         "SERENA_PROJECT_PATH": "D:/work",
         "DISABLE_BROWSER": "true",
-        "NO_BROWSER": "true"
+        "NO_BROWSER": "true",
+        "ENABLE_TOOL_SEARCH": "true"
       }
     },
     "cipher": {

@@ -6,4 +6,5 @@
  */
 
 export { callMCPTool, mcpRegistry, MCPClient, type MCPClientConfig } from './client.js';
+export { MCPClientError, type MCPClientErrorCode } from './errors.js';
 export { generateServerFiles, generateAllServers, type ServerConfig } from './generator.js';
