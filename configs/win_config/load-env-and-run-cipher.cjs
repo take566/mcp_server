@@ -59,12 +59,99 @@ if (!process.env.CIPHER_EMBEDDER) {
   process.env.CIPHER_EMBEDDER = 'local';
 }
 
-// Run cipher
-const cipherArgs = ['-y', '@byterover/cipher', '--mode', 'mcp'];
-const npxProcess = spawn('npx', cipherArgs, {
-  stdio: 'inherit',
-  env: process.env,
+// Run cipher.
+// IMPORTANT: MCP stdio transport requires stdout to contain ONLY JSON-RPC frames.
+// We therefore avoid `shell: true` and forward child stdout/stderr explicitly.
+const npxCommand = 'npx';
+const cipherArgs = ['--yes', '--quiet', '@byterover/cipher', '--mode', 'mcp'];
+const childEnv = {
+  ...process.env,
+  npm_config_loglevel: process.env.npm_config_loglevel || 'silent',
+  npm_config_update_notifier: 'false',
+  npm_config_fund: 'false',
+  npm_config_audit: 'false',
+};
+
+// shell: true is required on Windows (npx is a batch file).
+// The stdout filter below ensures only valid MCP frames reach the parent.
+const npxProcess = spawn(npxCommand, cipherArgs, {
+  stdio: ['pipe', 'pipe', 'pipe'],
+  env: childEnv,
   shell: true
+});
+
+process.stdin.on('data', (chunk) => {
+  npxProcess.stdin.write(chunk);
+});
+
+process.stdin.on('end', () => {
+  npxProcess.stdin.end();
+});
+
+process.stdin.on('error', () => {
+  npxProcess.stdin.end();
+});
+
+let stdoutBuffer = Buffer.alloc(0);
+
+/**
+ * Forward only valid MCP stdio frames from child stdout.
+ * Any non-framed output is moved to stderr so it won't break JSON parsing.
+ */
+npxProcess.stdout.on('data', (chunk) => {
+  stdoutBuffer = Buffer.concat([stdoutBuffer, chunk]);
+
+  while (stdoutBuffer.length > 0) {
+    // Drop any leading noise and align at the next possible header.
+    const candidateIdx = stdoutBuffer.indexOf('Content-Length:');
+    if (candidateIdx > 0) {
+      process.stderr.write(stdoutBuffer.slice(0, candidateIdx));
+      stdoutBuffer = stdoutBuffer.slice(candidateIdx);
+    } else if (candidateIdx === -1) {
+      process.stderr.write(stdoutBuffer);
+      stdoutBuffer = Buffer.alloc(0);
+      break;
+    }
+
+    const headerEndCRLF = stdoutBuffer.indexOf('\r\n\r\n');
+    const headerEndLF = stdoutBuffer.indexOf('\n\n');
+    let headerEnd = -1;
+    let separatorLength = 0;
+    if (headerEndCRLF !== -1 && (headerEndLF === -1 || headerEndCRLF < headerEndLF)) {
+      headerEnd = headerEndCRLF;
+      separatorLength = 4;
+    } else if (headerEndLF !== -1) {
+      headerEnd = headerEndLF;
+      separatorLength = 2;
+    } else {
+      // Wait for complete header.
+      break;
+    }
+
+    const headerText = stdoutBuffer.slice(0, headerEnd).toString('utf8');
+
+    const match = headerText.match(/Content-Length:\s*(\d+)/i);
+    if (!match) {
+      process.stderr.write(Buffer.from(`[CIPHER-WRAPPER] Invalid MCP header from child: ${headerText}\n`));
+      stdoutBuffer = stdoutBuffer.slice(headerEnd + separatorLength);
+      continue;
+    }
+
+    const bodyLength = Number(match[1]);
+    const frameLength = headerEnd + separatorLength + bodyLength;
+    if (stdoutBuffer.length < frameLength) {
+      // Wait for the rest of this frame.
+      break;
+    }
+
+    // Forward one complete frame as-is.
+    process.stdout.write(stdoutBuffer.slice(0, frameLength));
+    stdoutBuffer = stdoutBuffer.slice(frameLength);
+  }
+});
+
+npxProcess.stderr.on('data', (chunk) => {
+  process.stderr.write(chunk);
 });
 
 npxProcess.on('error', (error) => {
@@ -73,5 +160,8 @@ npxProcess.on('error', (error) => {
 });
 
 npxProcess.on('exit', (code) => {
+  if (stdoutBuffer.length > 0) {
+    process.stderr.write(stdoutBuffer);
+  }
   process.exit(code || 0);
 });
