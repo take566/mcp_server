@@ -58,3 +58,16 @@ configs/win_config/nul
 **/gcp-oauth.keys.json
 **/credentials.json
 **/token.json
+
+# Vendored MCP server clones (carry foreign .git/, no upstream remote
+# configured here — track upstream via the original repo, not this monorepo)
+mcp_servers/Ollama-mcp/
+mcp_servers/claude-mem/
+mcp_servers/markdownify-mcp/
+mcp_servers/mcp-obsidian-src/
+mcp_servers/mcp-server-kubernetes/
+tools/llm-script/
+
+# Local install/build sinks
+.mcp-bin/
+/mcp-code-execution/
