@@ -2,9 +2,25 @@ name: CI
 
 on:
   push:
-    branches: [main, 'feature/**']
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '**/*.svg'
+      - '**/*.png'
+      - '.gitignore'
+      - '**/.gitignore'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '**/*.svg'
+      - '**/*.png'
+      - '.gitignore'
+      - '**/.gitignore'
   workflow_dispatch:
 
 concurrency:
