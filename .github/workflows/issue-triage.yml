@@ -6,6 +6,7 @@ on:
 
 jobs:
   triage-issue:
+    if: github.event.issue.user.type != 'Bot'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
