@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "echo \"passthrough wrapper: no build needed\""
+  },
   "dependencies": {
     "@notionhq/notion-mcp-server": "^2.2.1"
   }
