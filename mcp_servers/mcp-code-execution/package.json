@@ -4,6 +4,7 @@
   "description": "Code execution wrapper for MCP servers - converts MCP tools to TypeScript APIs",
   "type": "module",
   "main": "dist/index.js",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
