@@ -3,18 +3,18 @@
   "description": "Notion integration via official MCP server",
   "upstream": {
     "package": "@notionhq/notion-mcp-server",
-    "version": "^1.9.1"
+    "version": "^2.2.1"
   },
   "auth": {
     "type": "apiKey",
-    "envVar": "NOTION_API_KEY",
-    "notes": "Create an integration at https://www.notion.so/my-integrations and grant it access to the target pages/databases."
+    "envVar": "NOTION_TOKEN",
+    "notes": "Create an integration at https://www.notion.so/my-integrations and grant it access to the target pages/databases. v2 uses a raw bearer token in NOTION_TOKEN (v1 OPENAPI_MCP_HEADERS env is no longer supported)."
   },
   "desktop_config": {
     "command": "npx",
     "args": ["-y", "@notionhq/notion-mcp-server"],
     "env": {
-      "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ${NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\"}"
+      "NOTION_TOKEN": "${NOTION_TOKEN}"
     }
   }
 }

@@ -192,7 +192,7 @@ Claude Desktopの設定ファイルを確認：
 設定ファイルで使用されている環境変数が正しく設定されているか確認：
 - `BRAVE_API_KEY`
 - `GITHUB_PERSONAL_ACCESS_TOKEN`
-- `OPENAPI_MCP_HEADERS`
+- `NOTION_TOKEN` (@notionhq/notion-mcp-server v2 以降; v1 の `OPENAPI_MCP_HEADERS` は廃止)
 - その他のAPIキー
 
 ---

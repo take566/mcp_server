@@ -61,14 +61,14 @@ Example -- to add the Notion wrapper, merge its `desktop_config` into `mcpServer
       "command": "npx",
       "args": ["-y", "@notionhq/notion-mcp-server"],
       "env": {
-        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ${NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\"}"
+        "NOTION_TOKEN": "${NOTION_TOKEN}"
       }
     }
   }
 }
 ```
 
-Set the referenced environment variables (`NOTION_API_KEY`, `SLACK_BOT_TOKEN`, etc.) in your system environment before launching Claude Desktop.
+Set the referenced environment variables (`NOTION_TOKEN`, `SLACK_BOT_TOKEN`, etc.) in your system environment before launching Claude Desktop.
 
 ## Adding a new wrapper
 

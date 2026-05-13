@@ -64,17 +64,14 @@ Claude デスクトップでよくある「再接続」「トークン確認」�
 1. [Notion マイ インテグレーション](https://www.notion.so/my-integrations) を開く
 2. 該当インテグレーション（または2つ目を使う場合はそのインテグレーション）を選択
 3. **新しいトークンを発行** または **シークレットの再表示** でトークンをコピー
-4. 設定の更新:
+4. 設定の更新（@notionhq/notion-mcp-server v2 以降）:
    - **環境変数で渡す場合**:  
-     `export NOTION_API_KEY="secret_xxxx"`  
+     `export NOTION_TOKEN="secret_xxxx"`  
      かつ、`claude_desktop_config.json` の Notion 用エントリで  
-     `OPENAPI_MCP_HEADERS` を  
-     `"{\"Authorization\": \"Bearer ${NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\"}"`  
-     のようにしていることを確認
-   - **直接ヘッダーに書く場合**（非推奨）:  
-     `OPENAPI_MCP_HEADERS` に  
-     `"{\"Authorization\": \"Bearer secret_あなたのトークン\", \"Notion-Version\": \"2022-06-28\"}"`  
-     を設定（トークンは環境変数推奨）
+     `"NOTION_TOKEN": "${NOTION_TOKEN}"` を設定
+   - **直接書く場合**（非推奨）:  
+     `"NOTION_TOKEN": "secret_あなたのトークン"` を設定（環境変数推奨）
+   - **v1 の `OPENAPI_MCP_HEADERS` は v2 で廃止**。残っている場合は `NOTION_TOKEN` に置換
 5. 使うページ・データベースで、そのインテグレーションに「アクセスを許可」しているか確認
 6. Claude デスクトップを再起動
 

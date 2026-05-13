@@ -29,7 +29,7 @@
         "@notionhq/notion-mcp-server"
       ],
       "env": {
-        "OPENAPI_MCP_HEADERS": "${OPENAPI_MCP_HEADERS}"
+        "NOTION_TOKEN": "${NOTION_TOKEN}"
       }
     },
     "github": {
