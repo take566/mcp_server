@@ -32,14 +32,17 @@ jobs:
       - name: Update @modelcontextprotocol/* in each package
         run: |
           dirs=(
-            "mcp_servers/claude-mem"
-            "mcp_servers/mcp-server-kubernetes"
+            "mcp_servers/Ollama-mcp"
             "mcp_servers/markdownify-mcp"
+            "mcp_servers/mcp-server-kubernetes"
             "mcp_servers/mcp-obsidian-src"
+            "mcp_servers/_template"
+            "mcp_servers/claude-mem"
+            "mcp_servers/openrouter-mcp"
             "mcp_servers/gdrive-mcp"
-            "mcp_servers/slack-mcp"
-            "mcp_servers/package"
-            "mcp-code-execution"
+            "mcp_servers/arxiv-mcp"
+            "mcp_servers/chrome-devtools-mcp"
+            "mcp_servers/mcp-code-execution"
           )
           for dir in "${dirs[@]}"; do
             if [ -f "$dir/package.json" ]; then
