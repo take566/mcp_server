@@ -29,14 +29,6 @@
       ],
       "env": {}
     },
-    "figma-desktop": {
-      "type": "sse",
-      "url": "http://127.0.0.1:3845/mcp"
-    },
-    "storybook": {
-      "type": "sse",
-      "url": "http://127.0.0.1:6006/mcp"
-    },
     "gemini-cli": {
       "type": "stdio",
       "command": "cmd",
@@ -44,8 +36,7 @@
         "/c",
         "npx",
         "-y",
-        "@choplin/mcp-gemini-cli",
-        "--allow-npx"
+        "gemini-mcp-tool"
       ],
       "env": {}
     },
