@@ -44,8 +44,7 @@
         "/c",
         "npx",
         "-y",
-        "@choplin/mcp-gemini-cli",
-        "--allow-npx"
+        "gemini-mcp-tool"
       ],
       "env": {}
     },
