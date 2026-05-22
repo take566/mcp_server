@@ -9,14 +9,14 @@
     "filesystem": {
       "command": "C:\\Program Files\\nodejs\\node.exe",
       "args": [
-        "C:\\Users\\tmf58\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
+        "C:\\Users\\YOUR_USERNAME\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
         "D:\\work\\"
       ]
     },
     "brave-search": {
       "command": "C:\\Program Files\\nodejs\\node.exe",
       "args": [
-        "C:\\Users\\tmf58\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-brave-search\\dist\\index.js"
+        "C:\\Users\\YOUR_USERNAME\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-brave-search\\dist\\index.js"
       ],
       "env": {
         "BRAVE_API_KEY": "${BRAVE_API_KEY}"

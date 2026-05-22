@@ -5,7 +5,7 @@
         "args": [
           "-y",
           "@modelcontextprotocol/server-filesystem",
-          "/Users/tmf58/Documents/"
+          "/Users/YOUR_USERNAME/Documents/"
         ]
       },
       "brave-search": {
@@ -40,7 +40,7 @@
       },
       "google-analytics": {
         "command": "node",
-        "args": ["/Users/tmf58/Documents/mcp_server/google-analytics-mcp/build/index.js"],
+        "args": ["/Users/YOUR_USERNAME/Documents/mcp_server/google-analytics-mcp/build/index.js"],
         "env": {
           "GOOGLE_CLIENT_EMAIL": "${GOOGLE_CLIENT_EMAIL}",
           "GOOGLE_PRIVATE_KEY": "${GOOGLE_PRIVATE_KEY}",
@@ -53,7 +53,7 @@
         "command": "uvx",
         "args": ["arxiv-mcp-server"],
         "env": {
-          "PATH": "/usr/local/bin:/Users/tmf58/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          "PATH": "/usr/local/bin:/Users/YOUR_USERNAME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         }
       },
       "serena": {
@@ -61,7 +61,7 @@
         "args": [
           "run",
           "--directory",
-          "/Users/tmf58/Documents/serena",
+          "/Users/YOUR_USERNAME/Documents/serena",
           "serena-mcp-server",
           "--port",
           "32123"
@@ -69,7 +69,7 @@
         "port": 32123,
         "env": {
           "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-          "SERENA_PROJECT_PATH": "/Users/tmf58/Documents/serena",
+          "SERENA_PROJECT_PATH": "/Users/YOUR_USERNAME/Documents/serena",
           "DISABLE_BROWSER": "true",
           "NO_BROWSER": "true"
         }
