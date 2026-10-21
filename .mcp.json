@@ -53,10 +53,8 @@
     },
     "colab-proxy-mcp": {
       "type": "stdio",
-      "command": "py",
+      "command": "uv",
       "args": [
-        "-m",
-        "uv",
         "tool",
         "run",
         "--from",
@@ -75,10 +73,8 @@
     },
     "serena": {
       "type": "stdio",
-      "command": "py",
+      "command": "uv",
       "args": [
-        "-m",
-        "uv",
         "run",
         "--directory",
         "D:/work/serena",
