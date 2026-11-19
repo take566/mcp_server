@@ -7,9 +7,9 @@ Model Context Protocol (MCP) サーバーと開発ツールを管理するモノ
 | サーバー | 説明 | 言語 | パッケージマネージャー | ステータス |
 |----------|------|------|----------------------|-----------|
 | [gdrive-mcp](mcp_servers/gdrive-mcp/) | Google Drive 検索・リソース読み取り | TypeScript | npm | Active |
-| [mcp-code-execution](mcp_servers/mcp-code-execution/) | MCP ツールを TypeScript API 化（コード実行エージェント向け） | TypeScript | pnpm | Active |
+| [mcp-code-execution](mcp_servers/mcp-code-execution/) | MCP ツールを TypeScript API 化（コード実行エージェント向け） | TypeScript | npm | Active |
 | [notion-mcp-server](mcp_servers/notion-mcp-server/) | Notion（公式 `@notionhq/notion-mcp-server` の薄いラッパー） | — | npm | 互換維持のみ。設定は [`wrappers/notion.json`](wrappers/notion.json) を推奨 |
-| [slack-mcp](mcp_servers/slack-mcp/) | Slack（`@modelcontextprotocol/server-slack`） | — | pnpm | 互換維持のみ・[upstream 非推奨](mcp_servers/slack-mcp/README.md)。[`wrappers/slack.json`](wrappers/slack.json) を参照 |
+| [slack-mcp](mcp_servers/slack-mcp/) | Slack（`@modelcontextprotocol/server-slack`） | — | npm | 互換維持のみ・[upstream 非推奨](mcp_servers/slack-mcp/README.md)。[`wrappers/slack.json`](wrappers/slack.json) を参照 |
 
 Notion / Slack の推奨構成は設定ファイルベースの [`wrappers/`](wrappers/)（`npx -y …` で起動）を参照。
 
@@ -21,12 +21,11 @@ Notion / Slack の推奨構成は設定ファイルベースの [`wrappers/`](wr
 # 1. テンプレートをコピー
 cp -r mcp_servers/_template mcp_servers/my-server
 
-# 2. package.json の name と description を編集
-cd mcp_servers/my-server
+# 2. package.json の name と description を編集し、ルート package.json の workspaces に追加
 
-# 3. 依存関係のインストールとビルド
+# 3. 依存関係のインストールとビルド（ルートで実行）
 npm install
-npm run build
+npm run build --workspace mcp_servers/my-server
 
 # 4. MCP Inspector で動作確認
 npx -y @modelcontextprotocol/inspector node dist/index.js
@@ -37,9 +36,9 @@ npx -y @modelcontextprotocol/inspector node dist/index.js
 ### 既存サーバーの利用
 
 ```bash
-cd mcp_servers/<server-name>
-# パッケージマネージャーはサーバーごとに異なる（上記一覧参照）
-npm install && npm run build   # または pnpm install && pnpm run build
+# ルートの npm workspaces で一括管理（lockfile はルートの package-lock.json のみ）
+npm ci
+npm run build --workspace mcp_servers/<server-name>
 ```
 
 ## ビルド
@@ -47,8 +46,8 @@ npm install && npm run build   # または pnpm install && pnpm run build
 ### 個別ビルド
 
 ```bash
-cd mcp_servers/<server-name>
-npm install && npm run build   # または pnpm / bun（サーバーごとに異なる）
+npm ci   # ルートで 1 回
+npm run build --workspace mcp_servers/<server-name>
 ```
 
 `package.json` に `build` スクリプトがないディレクトリ（薄いラッパーなど）は `build:all` の対象外になる。
@@ -59,7 +58,7 @@ npm install && npm run build   # または pnpm / bun（サーバーごとに異
 npm run build:all
 ```
 
-`scripts/build-all.mjs` が各サーバーのロックファイルからパッケージマネージャーを検出し、並列でビルドする。特定ディレクトリのみ: `node scripts/build-all.mjs --filter gdrive`。
+`scripts/build-all.mjs` がルート `package.json` の workspaces のうち `build` スクリプトを持つものを npm で並列ビルドする（git 管理外の vendored clone は対象外）。特定ディレクトリのみ: `node scripts/build-all.mjs --filter gdrive`。
 
 ### MCP SDK バージョン統一
 
@@ -67,7 +66,16 @@ npm run build:all
 npm run sync-sdk
 ```
 
-`scripts/sync-sdk.mjs` が各サーバーの `@modelcontextprotocol/sdk` バージョンを揃える。
+`scripts/sync-sdk.mjs` が各 workspace の `@modelcontextprotocol/sdk` とルート `overrides` のバージョンを揃える。実行後にルートで `npm install` して `package-lock.json` を更新する。
+
+### 品質チェック
+
+```bash
+npm run typecheck      # 各 workspace で tsc --noEmit
+npm run lint           # Biome lint（scripts/ tests/ と各 workspace の src/）
+npm run format:check   # Biome format（scripts/ tests/ とルート設定のみ。サーバーの src/ は対象外）
+npm test               # vitest（tests/ と各 workspace の src/**/*.test.ts）
+```
 
 ## テスト・デバッグ
 
@@ -116,8 +124,8 @@ npm run inspector
 mcp_server/
 ├── mcp_servers/              # MCP サーバー実装
 │   ├── _template/            # 新規サーバーテンプレート
-│   ├── gdrive-mcp/           # Google Drive (TS, npm)
-│   ├── mcp-code-execution/   # コード実行用 TS 生成 (TS, pnpm)
+│   ├── gdrive-mcp/           # Google Drive (TS)
+│   ├── mcp-code-execution/   # コード実行用 TS 生成 (TS)
 │   ├── notion-mcp-server/    # Notion 薄ラッパー（互換）
 │   └── slack-mcp/            # Slack 薄ラッパー（互換・注意事項あり）
 ├── wrappers/                 # 公式パッケージ向け JSON 設定（Notion / Slack 等）
@@ -125,13 +133,16 @@ mcp_server/
 │   ├── agent-browser/        # エージェント用ブラウザ連携 (Python, uv)
 │   └── ...
 ├── configs/                  # 共有設定・Claude Desktop 例
-│   ├── tsconfig.base.json
+│   ├── tsconfig.base.json    # 互換 shim（ルートの tsconfig.base.json を extends）
 │   ├── mac/
 │   └── win_config/
 ├── scripts/                  # build-all, sync-sdk 等
 ├── docs/                     # ドキュメント
 ├── .github/workflows/        # CI
-└── package.json              # ルート（build:all / sync-sdk / inspector）
+├── tsconfig.base.json        # 共通 tsconfig（各サーバーが extends）
+├── biome.json                # lint / format 設定
+├── vitest.config.mjs         # テスト設定
+└── package.json              # ルート（npm workspaces / build:all / typecheck / lint / test）
 ```
 
 ### サーバー共通パターン（TypeScript カスタム実装）
@@ -144,7 +155,7 @@ src/
   types.ts       # 型定義
 ```
 
-共通 tsconfig: `configs/tsconfig.base.json`（ES2022, NodeNext, strict）
+共通 tsconfig: ルートの `tsconfig.base.json`（ES2023, NodeNext, strict）
 
 ## 開発ガイド
 

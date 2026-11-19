@@ -1,0 +1,62 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "scripts/**/*.mjs",
+      "tests/**",
+      "vitest.config.mjs",
+      "biome.json",
+      "tsconfig.base.json",
+      "mcp_servers/_template/src/**/*.ts",
+      "mcp_servers/arxiv-mcp/src/**/*.ts",
+      "mcp_servers/chrome-devtools-mcp/src/**/*.ts",
+      "mcp_servers/gdrive-mcp/src/**/*.ts",
+      "mcp_servers/mcp-code-execution/src/**/*.ts",
+      "mcp_servers/openrouter-mcp/src/**/*.ts"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "auto",
+    "lineWidth": 120
+  },
+  "linter": {
+    "enabled": true
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.json"],
+      "formatter": {
+        "lineEnding": "lf"
+      }
+    },
+    {
+      "includes": ["mcp_servers/**"],
+      "formatter": {
+        "enabled": false
+      },
+      "assist": {
+        "enabled": false
+      },
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noImplicitAnyLet": "warn"
+          }
+        }
+      }
+    }
+  ]
+}

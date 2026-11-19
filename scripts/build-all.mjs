@@ -3,65 +3,37 @@
 /**
  * build-all.mjs
  *
- * Parallel build script for all MCP servers in the monorepo.
- * Auto-detects package manager per server by checking lockfiles:
- *   bun.lockb       -> bun
- *   pnpm-lock.yaml  -> pnpm
- *   package-lock.json -> npm
- *   (fallback)      -> npm
+ * Builds every npm workspace declared in the root package.json that has a
+ * "build" script. All workspaces share the single root package-lock.json and
+ * node_modules (run `npm ci` at the repository root first).
+ *
+ * Git-ignored vendored clones under mcp_servers/ are not workspaces and are
+ * not built here; build them with their own toolchain if needed.
  *
  * Usage:
  *   node scripts/build-all.mjs [--filter <name>] [--sequential] [--verbose]
  *
  * Options:
- *   --filter <name>   Build only servers whose directory name contains <name>
+ *   --filter <name>   Build only workspaces whose directory name contains <name>
  *   --sequential      Run builds one at a time instead of in parallel
  *   --verbose         Show full build output (not just errors)
  */
 
 import { spawn } from "node:child_process";
-import { readdir, access, readFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
-import { constants } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
-const SERVERS_DIR = join(ROOT, "mcp_servers");
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Check if a file exists */
-async function fileExists(filePath) {
-  try {
-    await access(filePath, constants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
+async function readJson(filePath) {
+  return JSON.parse(await readFile(filePath, "utf-8"));
 }
 
-/** Detect the package manager for a given server directory */
-async function detectPackageManager(serverDir) {
-  if (await fileExists(join(serverDir, "bun.lockb"))) return "bun";
-  if (await fileExists(join(serverDir, "pnpm-lock.yaml"))) return "pnpm";
-  return "npm";
-}
-
-/** Check if the server has a "build" script in its package.json */
-async function hasBuildScript(serverDir) {
-  const pkgPath = join(serverDir, "package.json");
-  if (!(await fileExists(pkgPath))) return false;
-  try {
-    const raw = await readFile(pkgPath, "utf-8");
-    const pkg = JSON.parse(raw);
-    return Boolean(pkg.scripts && pkg.scripts.build);
-  } catch {
-    return false;
-  }
-}
-
-/** Run a command and capture output. Returns { ok, stdout, stderr, duration } */
+/** Run a command and capture output. Returns { ok, code, stdout, stderr, duration } */
 function runCommand(cmd, args, cwd) {
   return new Promise((resolvePromise) => {
     const start = performance.now();
@@ -74,33 +46,30 @@ function runCommand(cmd, args, cwd) {
 
     const stdout = [];
     const stderr = [];
-
     child.stdout.on("data", (chunk) => stdout.push(chunk));
     child.stderr.on("data", (chunk) => stderr.push(chunk));
 
-    child.on("close", (code) => {
+    const finish = (code, errMessage) => {
       const duration = ((performance.now() - start) / 1000).toFixed(1);
       resolvePromise({
         ok: code === 0,
         code,
         stdout: Buffer.concat(stdout).toString(),
-        stderr: Buffer.concat(stderr).toString(),
+        stderr: errMessage ?? Buffer.concat(stderr).toString(),
         duration,
       });
-    });
+    };
 
-    child.on("error", (err) => {
-      const duration = ((performance.now() - start) / 1000).toFixed(1);
-      resolvePromise({
-        ok: false,
-        code: -1,
-        stdout: "",
-        stderr: err.message,
-        duration,
-      });
-    });
+    child.on("close", (code) => finish(code));
+    child.on("error", (err) => finish(-1, err.message));
   });
 }
+
+const indent = (text, label) =>
+  text
+    .split("\n")
+    .map((l) => `  ${label} ${l}`)
+    .join("\n");
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing
@@ -117,119 +86,72 @@ const verbose = args.includes("--verbose");
 // ---------------------------------------------------------------------------
 
 async function main() {
-  console.log("=== MCP Server Build (build-all) ===\n");
+  console.log("=== MCP Server Build (build-all, npm workspaces) ===\n");
 
-  const entries = await readdir(SERVERS_DIR, { withFileTypes: true });
-  const serverDirs = entries
-    .filter((e) => e.isDirectory())
-    .map((e) => e.name)
-    .filter((name) => !filter || name.includes(filter));
+  const rootPkg = await readJson(join(ROOT, "package.json"));
+  const workspaces = rootPkg.workspaces ?? [];
 
-  // Discover buildable servers
   const buildTargets = [];
-  for (const name of serverDirs) {
-    const dir = join(SERVERS_DIR, name);
-    if (await hasBuildScript(dir)) {
-      const pm = await detectPackageManager(dir);
-      buildTargets.push({ name, dir, pm });
-    }
+  for (const ws of workspaces) {
+    const name = basename(ws);
+    if (filter && !name.includes(filter)) continue;
+    const pkg = await readJson(join(ROOT, ws, "package.json"));
+    if (pkg.scripts?.build) buildTargets.push({ name, ws });
   }
 
   if (buildTargets.length === 0) {
-    console.log("No buildable servers found.");
+    console.log("No buildable workspaces found.");
     process.exit(0);
   }
 
-  console.log(
-    `Found ${buildTargets.length} server(s) to build${filter ? ` (filter: "${filter}")` : ""}:\n`
-  );
-  for (const t of buildTargets) {
-    console.log(`  - ${t.name}  (${t.pm})`);
-  }
+  console.log(`Found ${buildTargets.length} workspace(s) to build${filter ? ` (filter: "${filter}")` : ""}:\n`);
+  for (const t of buildTargets) console.log(`  - ${t.name}  (${t.ws})`);
   console.log();
 
-  // Build function for a single server
   async function buildOne(target) {
-    const { name, dir, pm } = target;
-    const label = `[${name}]`;
-    console.log(`${label} Building with ${pm}...`);
+    const label = `[${target.name}]`;
+    console.log(`${label} Building...`);
 
-    const result = await runCommand(pm, ["run", "build"], dir);
+    const result = await runCommand("npm", ["run", "build", "--workspace", target.ws], ROOT);
 
     if (result.ok) {
       console.log(`${label} OK (${result.duration}s)`);
     } else {
       console.error(`${label} FAILED (exit ${result.code}, ${result.duration}s)`);
-      if (result.stderr) {
-        console.error(
-          result.stderr
-            .split("\n")
-            .map((l) => `  ${label} ${l}`)
-            .join("\n")
-        );
-      }
+      // tsc reports type errors on stdout, so always show both streams on failure
+      if (result.stdout) console.error(indent(result.stdout, label));
+      if (result.stderr) console.error(indent(result.stderr, label));
     }
 
-    if (verbose && result.stdout) {
-      console.log(
-        result.stdout
-          .split("\n")
-          .map((l) => `  ${label} ${l}`)
-          .join("\n")
-      );
+    if (verbose && result.ok && result.stdout) {
+      console.log(indent(result.stdout, label));
     }
 
     return { ...target, ...result };
   }
 
-  // Execute builds
   const startAll = performance.now();
   let results;
-
   if (sequential) {
     results = [];
-    for (const target of buildTargets) {
-      results.push(await buildOne(target));
-    }
+    for (const target of buildTargets) results.push(await buildOne(target));
   } else {
     results = await Promise.all(buildTargets.map(buildOne));
   }
-
   const totalTime = ((performance.now() - startAll) / 1000).toFixed(1);
 
-  // Summary
-  const passed = results.filter((r) => r.ok);
   const failed = results.filter((r) => !r.ok);
 
   console.log("\n=== Build Summary ===\n");
   console.log(`Total:   ${results.length}`);
-  console.log(`Passed:  ${passed.length}`);
+  console.log(`Passed:  ${results.length - failed.length}`);
   console.log(`Failed:  ${failed.length}`);
   console.log(`Time:    ${totalTime}s${sequential ? " (sequential)" : " (parallel)"}\n`);
 
-  if (failed.length > 0) {
-    console.log("Failed servers:");
-    for (const f of failed) {
-      console.log(`  - ${f.name} (${f.pm}, exit ${f.code})`);
-    }
-    console.log();
-  }
-
-  // Table view
-  console.log(
-    "Server".padEnd(30) +
-      "PM".padEnd(8) +
-      "Status".padEnd(10) +
-      "Time"
-  );
-  console.log("-".repeat(56));
+  console.log(`${"Workspace".padEnd(30)}${"Status".padEnd(10)}Time`);
+  console.log("-".repeat(48));
   for (const r of results) {
-    console.log(
-      r.name.padEnd(30) +
-        r.pm.padEnd(8) +
-        (r.ok ? "OK" : "FAIL").padEnd(10) +
-        `${r.duration}s`
-    );
+    console.log(`${r.name.padEnd(30)}${(r.ok ? "OK" : "FAIL").padEnd(10)}${r.duration}s`);
   }
 
   process.exit(failed.length > 0 ? 1 : 0);

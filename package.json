@@ -4,18 +4,43 @@
   "description": "Collection of Model Context Protocol (MCP) servers and development tools",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "mcp_servers/_template",
+    "mcp_servers/arxiv-mcp",
+    "mcp_servers/chrome-devtools-mcp",
+    "mcp_servers/gdrive-mcp",
+    "mcp_servers/mcp-code-execution",
+    "mcp_servers/notion-mcp-server",
+    "mcp_servers/openrouter-mcp",
+    "mcp_servers/slack-mcp"
+  ],
   "scripts": {
-    "test": "echo \"No tests specified\" && exit 0",
-    "format:check": "echo \"No format check specified\" && exit 0",
-    "typecheck": "echo \"No typecheck specified\" && exit 0",
+    "build:all": "node scripts/build-all.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run --passWithNoTests",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check .",
+    "sync-sdk": "node scripts/sync-sdk.mjs",
     "inspector": "npx -y @modelcontextprotocol/inspector",
     "inspector:drawio": "npx -y @modelcontextprotocol/inspector npx -y @drawio/mcp",
     "inspector:chrome-devtools": "npx -y @modelcontextprotocol/inspector npx -y chrome-devtools-mcp@latest",
     "inspector:context7": "npx -y @modelcontextprotocol/inspector npx -y @upstash/context7-mcp",
     "inspector:claude-mem": "npx -y @modelcontextprotocol/inspector node mcp_servers/claude-mem/plugin/scripts/mcp-server.cjs",
-    "inspector:kubernetes": "npx -y @modelcontextprotocol/inspector node mcp_servers/mcp-server-kubernetes/dist/index.js",
-    "build:all": "node scripts/build-all.mjs",
-    "sync-sdk": "node scripts/sync-sdk.mjs"
+    "inspector:kubernetes": "npx -y @modelcontextprotocol/inspector node mcp_servers/mcp-server-kubernetes/dist/index.js"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.8",
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.1"
+  },
+  "overrides": {
+    "@modelcontextprotocol/sdk": "^1.32.2"
   },
   "repository": {
     "type": "git",
