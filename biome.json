@@ -24,6 +24,7 @@
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
+    "lineEnding": "auto",
     "lineWidth": 120
   },
   "linter": {
@@ -35,6 +36,12 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["**/*.json"],
+      "formatter": {
+        "lineEnding": "lf"
+      }
+    },
     {
       "includes": ["mcp_servers/**"],
       "formatter": {
