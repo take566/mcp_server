@@ -104,12 +104,13 @@ npm run typecheck && npm run lint && npm run format:check && npm test
 
 新しいサーバーを追加すると、**自動的にCI/CDに統合**されます:
 
-1. **変更検知**: `detect-changes.yml` が `mcp_servers/your-mcp-server/**` を検知
-2. **動的マトリクス**: `ts-mcp-ci.yml` のマトリクスに自動追加
-3. **並列ビルド**: 他のサーバーと並列でビルド・テスト実行
-4. **SDK互換性**: 自動的にSDKバージョンチェック
+ルート `package.json` の `workspaces` にサーバーを追加すれば、`.github/workflows/ci.yml` の `node` ジョブが対象に含めます。
 
-**手動設定不要** - パスが `mcp_servers/*/` であれば自動認識されます。
+1. **インストール**: `npm ci`（ルートの `package-lock.json` を使用）
+2. **検証**: `npm run typecheck` / `npm run lint` / `npm run format:check` / `npm test`
+3. **ビルド**: `npm run build:all`（`build` スクリプトを持つ workspace を並列ビルド）
+
+CI のワークフロー側の設定変更は不要です。
 
 ---
 
@@ -171,10 +172,9 @@ uv add mcp
 
 Python MCPサーバーは `tools/**/*.py` パスで自動認識:
 
-1. **変更検知**: `detect-changes.yml` が検知
-2. **Python CI実行**: `py-mcp-ci.yml` が自動実行
-3. **マトリックステスト**: Python 3.11, 3.12 で並列テスト
-4. **品質チェック**: Ruff + mypy + pytest 自動実行
+1. **変更検知**: `ci.yml` の `changes` ジョブが `tools/**/*.py` / `tools/**/*.toml` の変更を検知
+2. **Python CI実行**: `python` ジョブが実行（現状の対象は `tools/llm-script`）
+3. **品質チェック**: Ruff + pytest（`tests/` がある場合）
 
 ---
 
@@ -188,9 +188,8 @@ git push
 ```
 
 GitHub Actions タブで確認:
-- ✅ `detect-changes` ジョブで新サーバー検知
-- ✅ `ts-mcp-ci` または `py-mcp-ci` で自動ビルド
-- ✅ `ci-summary` でレポート生成
+- ✅ `node` ジョブ（TypeScript）または `python` ジョブ（`tools/`）が成功
+- ✅ `CI Pass` ゲートが成功
 
 ### トラブルシューティング
 

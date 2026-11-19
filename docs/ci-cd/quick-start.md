@@ -4,66 +4,43 @@
 
 ## Overview
 
-This repository uses **intelligent change detection** and **parallel execution** for fast CI/CD.
+CI is a single workflow, `.github/workflows/ci.yml`. The Node workspaces (typecheck, lint, format check, test, build) always run; the Python job runs only when files under `tools/` changed.
 
-Key features:
-- Up to 90% execution time reduction (50 min -> 5 min)
-- Only changed components are tested
-- 7 servers built in parallel
-- Comprehensive automated reports
-
-## Main Workflows
+## Main Workflow
 
 | File | Role | Trigger |
 |------|------|---------|
-| `monorepo-ci.yml` | Main orchestrator | push/PR |
-| `detect-changes.yml` | Change detection & impact analysis | workflow_call |
-| `ts-mcp-ci.yml` | TypeScript MCP CI | Conditional |
-| `py-mcp-ci.yml` | Python MCP CI | Conditional |
+| `ci.yml` | Node workspaces + Python tools + `CI Pass` gate | push/PR to main, manual dispatch |
 
 ## Basic Flow
 
 ```
-1. Push code changes
+1. Push code changes (docs/markdown-only changes skip CI)
    |
-2. detect-changes runs automatically
+2. changes: detect Python changes under tools/
    |
-3. Appropriate CI triggered based on results:
-   - TypeScript changes -> ts-mcp-ci
-   - Python changes -> py-mcp-ci
-   - Both -> parallel execution
+3. node: npm ci -> typecheck -> lint -> format:check -> test -> build:all
+   python: runs only if tools/ changed
    |
-4. Results consolidated in GitHub Summary report
+4. ci-pass: required status check
 ```
-
-## Execution Time Estimates
-
-| Your Change | CI Time |
-|------------|---------|
-| Single file edit | 3-5 min |
-| One MCP server change | 3-5 min |
-| Multiple server changes | 5-7 min |
-| Root config change | 7-10 min (all servers) |
-
-**First run**: 12-15 min without cache.
-**Subsequent runs**: Faster with cache.
 
 ## Common Operations
 
 ### Add a New MCP Server
 
 ```bash
-mkdir -p mcp_servers/new-server/src
-# Create package.json, tsconfig.json, src/index.ts
+cp -r mcp_servers/_template mcp_servers/new-server
+# Edit package.json, then add it to "workspaces" in the root package.json
 # See: docs/adding-new-mcp-server.md
 
 git add mcp_servers/new-server/
 git commit -m "feat: add new-server"
 git push
-# CI auto-detects and runs
+# CI runs the root npm workspaces job
 ```
 
-**No manual CI configuration required** -- path-based auto-detection.
+**No CI configuration change required** -- once the server is listed in the root `workspaces`, the `node` job covers it.
 
 ### Handle CI Failure
 
@@ -84,7 +61,7 @@ gh cache delete <cache-key>
 GitHub Actions UI -> Running workflow -> Cancel workflow
 
 ### Force Full Test Run
-GitHub Actions -> monorepo-ci -> Run workflow (manual dispatch)
+GitHub Actions -> CI -> Run workflow (manual dispatch)
 
 ### Skip CI
 ```bash
@@ -93,13 +70,6 @@ git commit -m "docs: update README [skip ci]"
 
 ## Detailed Documentation
 
-- [Architecture](architecture.md) - System design, data flow, performance
+- [Architecture](architecture.md) - Workflow structure
 - [Troubleshooting](troubleshooting.md) - Error resolution and debugging
 - [Adding MCP Servers](../adding-new-mcp-server.md) - Step-by-step guide
-
-## Performance Tips
-
-1. **Small commits**: Limit change scope for shorter CI times
-2. **Leverage cache**: Second runs are automatically faster
-3. **Think parallel**: Independent changes in separate files/servers
-4. **Fast feedback**: Failing tests are caught early

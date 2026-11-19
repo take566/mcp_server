@@ -13,6 +13,10 @@ Model Context Protocol (MCP) サーバーと開発ツールを管理するモノ
 
 Notion / Slack の推奨構成は設定ファイルベースの [`wrappers/`](wrappers/)（`npx -y …` で起動）を参照。
 
+## 管理対象の範囲
+
+ルート `package.json` の npm workspaces（git 管理対象）は `_template` / `arxiv-mcp` / `chrome-devtools-mcp` / `gdrive-mcp` / `mcp-code-execution` / `notion-mcp-server` / `openrouter-mcp` / `slack-mcp` の 8 つ。`Ollama-mcp` / `claude-mem` / `markdownify-mcp` / `mcp-obsidian-src` / `mcp-server-kubernetes` は gitignore された upstream の clone で、別途管理する（workspaces・ルート lockfile の対象外）。
+
 ## クイックスタート
 
 ### 新規サーバーの作成

@@ -58,9 +58,9 @@ grep -r "@modelcontextprotocol/sdk" mcp_servers/*/package.json
      "@modelcontextprotocol/sdk": "^1.25.3"
    }
    ```
-3. Reinstall: `npm install` or `pnpm install`
+3. Reinstall: `npm install` (at the repo root)
 
-The `ts-mcp-ci.yml` SDK compatibility job generates an automatic report.
+`npm run sync-sdk` aligns every workspace's SDK version with the root `overrides`. CI has no dedicated SDK-compatibility job; `tests/workspaces.test.mjs` asserts the pin.
 
 ## Build Failures
 
@@ -92,71 +92,37 @@ ruff format .
 
 ## Change Detection Issues
 
-### Changes made but CI does not run
+Only the Python job is gated by change detection (`changes` job in `ci.yml`).
 
-**Diagnosis**:
-```bash
-# Check detect-changes logs in GitHub Actions
-# Verify path filter definitions
-cat .github/workflows/detect-changes.yml | grep -A 10 "filters:"
-```
+### Python job does not run
+
+**Cause**: `py_changed` is true only for `tools/**/*.py` or `tools/**/*.toml` changes.
 
 **Solutions**:
-1. Verify path matches `mcp_servers/*/` pattern
-2. Update path filter in `detect-changes.yml`
-3. Force run: use `workflow_dispatch` manual trigger
+- Check the `changes` job log (`Python changed: ...`)
+- Run `workflow_dispatch` manually (the Python job still depends on `py_changed`)
 
-### CI runs on unchanged files
+### CI does not start at all
 
-**Cause**: Root config change (package.json, .github/workflows/**)
+**Cause**: `paths-ignore` skips pushes/PRs that only touch `**/*.md`, `docs/**`, images, `LICENSE` or `.gitignore`.
 
-**Behavior**: Normal -- CRITICAL changes trigger full CI for all servers
+### Node job always runs
 
-### Empty affected_servers array
+Normal: the `node` job runs all root workspaces on every CI run.
 
-- Verify path filters match actual file changes
-- Check git diff: `git diff --name-only origin/main..HEAD`
-- Ensure server directories match exactly (case-sensitive on Linux)
+## Package Manager
 
-## Parallel Execution Issues
+### `npm ci` fails in CI
 
-### Jobs not running in parallel
-
-**Diagnosis**: Check GitHub Actions UI for sequential execution
-
-**Cause**: Concurrency group settings too strict
-
-**Solution**:
-```yaml
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.server }}
-  cancel-in-progress: true
-```
-
-### Resource exhaustion
-
-**Cause**: GitHub Actions parallel job limit (max 20 jobs)
-
-**Solution**:
-```yaml
-strategy:
-  max-parallel: 10
-  matrix: ...
-```
-
-## Package Manager Detection
-
-### Detection fails in CI
+Package manager is npm only. The only lockfile is the root `package-lock.json` (no per-server lockfiles).
 
 **Diagnosis**:
 ```bash
-cd mcp_servers/<server-name>
-if [ -f "bun.lockb" ]; then echo bun
-elif [ -f "pnpm-lock.yaml" ]; then echo pnpm
-else echo npm; fi
+git ls-files package-lock.json   # must be tracked
+npm ci                           # run at the repo root
 ```
 
-**Solution**: Ensure lockfile is committed to git.
+**Solution**: Ensure the root `package-lock.json` is committed and in sync with every workspace `package.json` (run `npm install` at the root and commit the result).
 
 ## Python CI Issues
 
@@ -197,9 +163,9 @@ Key log sections:
 
 ```bash
 git clone <repo>
-cd <repo>/<server>
-npm ci      # or pnpm/bun
-npm run build
+cd <repo>
+npm ci      # at the repo root (npm workspaces)
+npm run build --workspace mcp_servers/<server-name>
 npm test
 ```
 
@@ -223,36 +189,7 @@ Re-run for detailed logs.
 | `Resource not accessible by integration` | Permission issue | Check workflow permissions |
 | `API rate limit exceeded` | GitHub API limit | Check GITHUB_TOKEN, wait |
 
-## CI Migration Guide
-
-### ci.yml vs ts-mcp-ci.yml Comparison
-
-| Feature | ci.yml | ts-mcp-ci.yml |
-|---------|--------|---------------|
-| Change Detection | No | Yes (dynamic) |
-| Parallel Jobs | Sequential | Max 7 concurrent |
-| Package Managers | Bun only | npm/pnpm/bun |
-| Caching | No | Multi-level |
-| Server Testing | Root only | Individual servers |
-| SDK Compatibility | No | Automated check |
-
-### Recommended Migration: Gradual Replacement
-
-1. **Week 1**: Deploy ts-mcp-ci.yml alongside ci.yml (parallel)
-2. **Week 2-3**: Validate performance, collect metrics
-3. **Week 4**: Replace ci.yml if validation successful
-
-### Rollback
-
-```bash
-git checkout HEAD~1 .github/workflows/ci.yml
-git rm .github/workflows/ts-mcp-ci.yml
-git commit -m "Rollback to original CI workflow"
-git push
-```
-
 ## Support
 
-- Workflow validation: `bash .github/scripts/validate-workflow.sh`
 - YAML check: `yamllint .github/workflows/`
 - Unresolvable issues: Create a GitHub Issue

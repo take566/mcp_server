@@ -36,4 +36,4 @@
 
 | Document | Description |
 |----------|-------------|
-| [proposals/01-unified-build-system.md](proposals/01-unified-build-system.md) | pnpm workspaces + Turborepo proposal |
+| [proposals/01-unified-build-system.md](proposals/01-unified-build-system.md) | 統一ビルドシステム提案（Superseded: 実際は npm workspaces を採用） |
