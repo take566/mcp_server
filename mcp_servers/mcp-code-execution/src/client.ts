@@ -37,7 +37,7 @@ const ListToolsResponseSchema = z.object({
   tools: z.array(z.object({
     name: z.string(),
     description: z.string().optional(),
-    inputSchema: z.record(z.any()),
+    inputSchema: z.record(z.string(), z.any()),
   })),
 });
 

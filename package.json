@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "workspaces": [
     "mcp_servers/_template",
@@ -41,7 +41,10 @@
     "vitest": "^5.1.1"
   },
   "overrides": {
-    "@modelcontextprotocol/sdk": "^1.32.2"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "googleapis-common": {
+      "gaxios": "^7.3.1"
+    }
   },
   "repository": {
     "type": "git",
