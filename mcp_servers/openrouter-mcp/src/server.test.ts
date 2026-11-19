@@ -91,6 +91,24 @@ describe("openrouter-mcp", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects out-of-range arguments without calling the API", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const client = await connect();
+    const res = await client
+      .callTool({
+        name: "openrouter_chat",
+        arguments: {
+          model: "m",
+          messages: [{ role: "user", content: "yo" }],
+          temperature: 5,
+        },
+      })
+      .catch((e: unknown) => ({ isError: true, e }));
+    expect(res.isError).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("returns an MCP error result when the API key is missing", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "");
     const client = await connect();
