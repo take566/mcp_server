@@ -22,50 +22,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: Sync @modelcontextprotocol/sdk across workspaces
+        run: node scripts/sync-sdk.mjs
 
-      - name: Update @modelcontextprotocol/* in each package
-        run: |
-          dirs=(
-            "mcp_servers/Ollama-mcp"
-            "mcp_servers/markdownify-mcp"
-            "mcp_servers/mcp-server-kubernetes"
-            "mcp_servers/mcp-obsidian-src"
-            "mcp_servers/_template"
-            "mcp_servers/claude-mem"
-            "mcp_servers/openrouter-mcp"
-            "mcp_servers/gdrive-mcp"
-            "mcp_servers/arxiv-mcp"
-            "mcp_servers/chrome-devtools-mcp"
-            "mcp_servers/mcp-code-execution"
-          )
-          for dir in "${dirs[@]}"; do
-            if [ -f "$dir/package.json" ]; then
-              echo "Updating MCP deps in $dir"
-              (
-                cd "$dir" \
-                && npx --yes npm-check-updates -u --target newest -f "@modelcontextprotocol/*" \
-                && if [ -f pnpm-lock.yaml ]; then
-                     pnpm install --lockfile-only --no-frozen-lockfile
-                   elif [ -f package-lock.json ]; then
-                     npm install --package-lock-only --ignore-scripts
-                   fi
-              )
-            fi
-          done
+      - name: Refresh root package-lock.json
+        run: npm install --package-lock-only --ignore-scripts
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           branch: deps/update-mcp-versions
-          commit-message: "chore(deps): update @modelcontextprotocol/* to latest"
-          title: "chore(deps): update @modelcontextprotocol/* to latest"
+          commit-message: "chore(deps): update @modelcontextprotocol/sdk to latest"
+          title: "chore(deps): update @modelcontextprotocol/sdk to latest"
           body: |
-            Automated update of `@modelcontextprotocol/*` dependencies across the repository.
+            Automated update of `@modelcontextprotocol/sdk` across all npm workspaces (`node scripts/sync-sdk.mjs` + root lockfile refresh).
             Please review and run CI before merging.
           labels: dependencies
