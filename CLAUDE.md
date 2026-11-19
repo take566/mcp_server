@@ -14,44 +14,22 @@ Codexにチームを作成してチームで仕事をするように依頼して
 
 作業が終わったら、git commit git push
 
-## Structure
+## 開発環境（npm workspaces）
 
-- `/mcp_servers/` - MCP server implementations (TypeScript/Python)
-- `/tools/` - Dev utilities (VS Code extensions, LLM caching)
-- `/configs/` - Claude Desktop / Codex CLI configs
-- `/docs/` - Documentation
-
-## Commands
-
-**TypeScript**: `npm install` → `npm run build` → `node dist/index.js`
-**Python**: `uv sync` → `python main.py`
-**Testing**: `npx @modelcontextprotocol/inspector` or `npx mcp-chat --server "./dist/index.js"`
-
-## Server Pattern
-
-`src/index.ts` (entry+transport) → `src/server.ts` (config+tools) → `src/tools/*.ts` (handlers) → `src/types.ts`
-tsconfig: ES2022, NodeNext, strict, outDir=dist
+- パッケージマネージャは **npm workspaces**。ルートの `package-lock.json` 1 つで管理する。pnpm / bun は使わない。
+- コマンド（ルートで実行）:
+  - `npm run typecheck` / `npm run lint` / `npm test` / `npm run format:check`
+  - `npm run build:all`（全ワークスペースをビルド）
+  - `npm run verify:mcp`（`.mcp.json` の起動先を検証）
+- git 管理のワークスペースはルート `package.json` の `workspaces` が正（執筆時点で 8 つ）: `_template` / `arxiv-mcp` / `chrome-devtools-mcp` / `gdrive-mcp` / `mcp-code-execution` / `notion-mcp-server` / `openrouter-mcp` / `slack-mcp`（`mcp_servers/` 配下）。
+- `.gitignore` 済みの upstream clone（執筆時点で 5 つ。`Ollama-mcp` / `claude-mem` / `markdownify-mcp` / `mcp-obsidian-src` / `mcp-server-kubernetes`）は別管理。workspaces には含まれず、typecheck / test / build:all の対象外。
+- 新しい Windows マシンではまず `scripts/setup-mcp.ps1`（PowerShell 専用）を実行する（uv ベースの colab-mcp / serena を事前インストールし、MCP 接続の 30 秒タイムアウトを避ける。`uv` が PATH に必要）。
+- 新規サーバーは `mcp_servers/_template`（`McpServer.registerTool` + zod）から始める。手順は `docs/adding-new-mcp-server.md`、registerTool 移行の互換性差異は `docs/MIGRATION_registerTool.md`。
 
 ## Desktop Config
 
 Win: `%APPDATA%\Claude\claude_desktop_config.json` | Mac: see `configs/mac/`
 Pattern: `{ "command": "node", "args": ["full/path/dist/index.js"], "env": { "KEY": "${KEY}" } }`
-
-## Byterover MCP Integration
-
-[byterover-mcp]
-
-### Workflows
-
-**Onboarding**: check-handbook-existence → check-handbook-sync → update-handbook → list-modules → store-knowledge
-**Planning**: retrieve-active-plans → save-implementation-plan → retrieve-knowledge → update-plan-progress → store-knowledge + reflect/assess-context
-
-### Rules
-
-- **ALWAYS** `byterover-retrieve-knowledge` for EACH TASK
-- **ALWAYS** `byterover-store-knowledge` for critical knowledge
-- Include "According to Byterover memory layer" when citing
-- `byterover-update-module` IMMEDIATELY on module changes
 
 ## Gotchas
 
@@ -61,10 +39,7 @@ Pattern: `{ "command": "node", "args": ["full/path/dist/index.js"], "env": { "KE
 
 ## 行動原則
 
-- **タスク着手前に必ず issue を立てる**: bug fix / feat / refactor / docs / chore 全種。タイトルは conventional commits 形式 (`fix(scope): ...`)。コミット末尾に `Closes #N` / `Refs #N`。master 直 push 禁止、PR 経由 squash merge 一本。issue → branch → commit → PR → CI → merge の全体フローと全 13 workflows は `rules/ci-cd.md`。
-- **マネージャー兼オーケストレーター**として動き、実装は subagent / task agent に委譲。タスクは超細分化し **PDCA** で進行。チーム編成時は **必ず反証役（Critic）を含める**。各エージェントの役割・実施内容を最終出力で明示。詳細: `rules/agent-orchestration.md`。
-- **セキュリティ不変条件を退行させない**: loopback-only / 非 root / `cap_drop:ALL` / `no-new-privileges` / seccomp / read-only rootfs / `sandbox:"all"` / シークレットは環境変数のみ（`op run --env-file=.env`）。詳細: `rules/security.md`。
-- **Gateway は Docker 外**（loopback 必須）、`num_ctx` と `contextWindow` の乖離はモデルブロック（最低 16000）、`Modelfile` / `config/mcp/plugins.json` は生成物で手編集禁止。その他は `rules/gotchas.md`。
-- Go 変更後は `make build` / `make lint` / `make test`、Ollama モデル変更後は Gateway 再起動、`.env` 実シークレットはコミット禁止。
+- **タスク着手前に必ず issue を立てる**: bug fix / feat / refactor / docs / chore 全種。タイトルは conventional commits 形式 (`fix(scope): ...`)。コミット末尾に `Closes #N` / `Refs #N`。master 直 push 禁止、PR 経由 squash merge 一本（issue → branch → commit → PR → CI → merge）。
+- **マネージャー兼オーケストレーター**として動き、実装は subagent / task agent に委譲。タスクは超細分化し **PDCA** で進行。チーム編成時は **必ず反証役（Critic）を含める**。各エージェントの役割・実施内容を最終出力で明示。
+- **セキュリティ不変条件を退行させない**: loopback-only / 非 root / `cap_drop:ALL` / `no-new-privileges` / seccomp / read-only rootfs / `sandbox:"all"` / シークレットは平文で置かず SOPS + age で暗号化し実行時に環境変数へ注入（`.env` 実シークレットはコミット禁止）。
 - セルフ更新: スキル `claude-md-improver`（監査＋ diff 提案）/ コマンド `/revise-claude-md`（セッション学習抽出）。
-- LLM 送信トークン圧縮には RTK (Rust Token Killer) 推奨。詳細は `.claude/rules/rtk.md`。
