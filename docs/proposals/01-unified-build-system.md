@@ -1,5 +1,7 @@
 # 提案1: 統一ビルドシステムの設計
 
+> **Status: Superseded** - 本提案（pnpm workspaces + Turborepo）は採用されなかった。実際には **npm workspaces**（ルート `package-lock.json` のみ）を採用した。現行の構成はルートの [README.md](../../README.md) と [package.json](../../package.json) を参照。以下は経緯を残すための履歴として保持する。
+
 ## エグゼクティブサマリー
 
 **決定: pnpm workspaces + Turborepo**

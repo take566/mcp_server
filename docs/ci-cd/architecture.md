@@ -34,7 +34,7 @@ graph TD
 
 **TypeScript** (`.github/workflows/ts-mcp-ci.yml`):
 - 7 servers parallel execution
-- npm/pnpm/bun auto-detection
+- npm workspaces (root `package-lock.json` + `npm ci`)
 - 3-layer cache strategy
 - SDK compatibility checks
 
@@ -107,13 +107,8 @@ else                  -> NONE
 5. **sdk-compatibility**: Validate MCP SDK versions
 6. **ci-summary**: Generate comprehensive CI summary
 
-### Package Manager Detection
-```bash
-if [ -f "bun.lockb" ]; then PM=bun
-elif [ -f "pnpm-lock.yaml" ]; then PM=pnpm
-else PM=npm
-fi
-```
+### Package Manager
+Package manager is npm only (npm workspaces). The single lockfile is the root `package-lock.json`; CI runs `npm ci` at the repo root (see `.github/workflows/ci.yml`).
 
 ### Cache Strategy
 - **Dependencies**: `${{ runner.os }}-${{ pm }}-${{ server }}-${{ hashFiles(package.json) }}-${{ hashFiles(lockfile) }}`
@@ -166,7 +161,7 @@ fi
 - **actions/cache**: Multi-layer caching
 - **uv**: Python package management
 - **Ruff**: Python linting
-- **Bun/npm/pnpm**: JavaScript package managers
+- **npm**: JavaScript package manager (npm workspaces)
 
 ## Integration Examples
 
