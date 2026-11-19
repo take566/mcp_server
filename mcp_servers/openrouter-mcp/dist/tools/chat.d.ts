@@ -1,53 +1,23 @@
-export declare const chatTool: {
-    name: string;
-    description: string;
-    inputSchema: {
-        type: "object";
-        properties: {
-            model: {
-                type: string;
-                description: string;
-            };
-            messages: {
-                type: string;
-                description: string;
-                items: {
-                    type: string;
-                    properties: {
-                        role: {
-                            type: string;
-                            enum: string[];
-                        };
-                        content: {
-                            type: string;
-                        };
-                    };
-                    required: string[];
-                };
-            };
-            max_tokens: {
-                type: string;
-            };
-            temperature: {
-                type: string;
-            };
-            top_p: {
-                type: string;
-            };
-        };
-        required: string[];
-    };
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
+export declare const chatInputShape: {
+    model: z.ZodString;
+    messages: z.ZodArray<z.ZodObject<{
+        role: z.ZodEnum<["system", "user", "assistant"]>;
+        content: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        role: "system" | "user" | "assistant";
+        content: string;
+    }, {
+        role: "system" | "user" | "assistant";
+        content: string;
+    }>, "many">;
+    max_tokens: z.ZodOptional<z.ZodEffects<z.ZodNumber, number, number>>;
+    temperature: z.ZodOptional<z.ZodEffects<z.ZodNumber, number, number>>;
+    top_p: z.ZodOptional<z.ZodEffects<z.ZodNumber, number, number>>;
 };
-export declare function handleChat(args: Record<string, unknown> | undefined): Promise<{
-    content: {
-        type: "text";
-        text: string;
-    }[];
-    isError?: undefined;
-} | {
-    content: {
-        type: "text";
-        text: string;
-    }[];
-    isError: boolean;
-}>;
+type ChatInput = z.infer<z.ZodObject<typeof chatInputShape>>;
+export declare function handleChat(input: ChatInput): Promise<CallToolResult>;
+export declare function registerChatTool(server: McpServer): void;
+export {};
