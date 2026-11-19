@@ -372,3 +372,11 @@ node configs\win_config\load-env-and-run-cipher.cjs
   - claude-code MCPサーバーのエラー分析
   - toolbox MCPサーバーのSSE接続エラー分析
   - claude_vm_node.logのエラー分析
+
+## colab-proxy-mcp / serena の CONNECT_TIMEOUT (2026-11-19, #33)
+
+- 原因: 起動ごとに uv が依存解決・ビルドを実行。serena は冷間時に約 74 秒（温まると約 3 秒）で 30 秒の接続待ちを超過。
+- 対処: `scripts/setup-mcp.ps1` で colab-mcp を固定 commit で `uv tool install`、serena を `uv sync` で事前同期。
+  `.mcp.json` は `colab-mcp` を直接実行、serena は `uv run --no-sync` で起動。
+- 依存を更新したら `scripts/setup-mcp.ps1` を再実行すること。
+- 新規クローン/別マシンでは先に `scripts/setup-mcp.ps1` の実行が必須（未実行だと colab-mcp は未インストール、serena は `--no-sync` のため venv が無く起動失敗）。また `C:\Users\<user>\.local\bin` が PATH に必要。
