@@ -1,19 +1,19 @@
 #!/usr/bin/env node
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
-  CallToolRequestSchema,
   ErrorCode,
   ListResourcesRequestSchema,
-  ListToolsRequestSchema,
   McpError,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { google, drive_v3 } from 'googleapis';
+import { google, type drive_v3 } from 'googleapis';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as http from 'http';
 import { exec } from 'child_process';
+import { fileURLToPath } from 'url';
+import { z } from 'zod';
 
 // 環境変数からパスを取得するか、デフォルト値を使用
 const OAUTH_PATH = process.env.GDRIVE_OAUTH_PATH || path.join(process.cwd(), 'gcp-oauth.keys.json');
@@ -98,172 +98,120 @@ const getExportMimeType = (mimeType: string): string | null => {
   return exportMap[mimeType] || null;
 };
 
-class GDriveServer {
-  private server: Server;
-  private drive: drive_v3.Drive;
+export const createDriveClient = (): drive_v3.Drive => {
+  try {
+    // 認証情報がない場合でもデモモードで動作するように修正
+    let auth: InstanceType<typeof google.auth.OAuth2> | InstanceType<typeof google.auth.GoogleAuth>;
+    try {
+      auth = getOAuth2Client();
+    } catch (e) {
+      console.error('OAuth認証情報の読み込みに失敗しました。デモモードで動作します:', e);
+      // APIキーなしでドライブクライアントを初期化
+      auth = new google.auth.GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+      });
+    }
+    return google.drive({ version: 'v3', auth });
+  } catch (error) {
+    console.error('Google Driveクライアントの初期化中にエラーが発生しました:', error);
+    throw error;
+  }
+};
 
-  constructor() {
-    this.server = new Server(
-      {
-        name: 'gdrive-server',
-        version: '0.1.0',
+export const createServer = (drive: drive_v3.Drive): McpServer => {
+  const mcpServer = new McpServer(
+    {
+      name: 'gdrive-server',
+      version: '0.1.0',
+    },
+    {
+      capabilities: {
+        resources: {},
+        tools: {},
       },
-      {
-        capabilities: {
-          resources: {},
-          tools: {},
-        },
-      }
-    );
+    }
+  );
+
+  // リソース一覧を提供（動的なリソースのため空のリストを返す）
+  mcpServer.server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+    resources: [],
+  }));
+
+  // リソース読み取り
+  mcpServer.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const match = request.params.uri.match(/^gdrive:\/\/\/(.+)$/);
+    if (!match) {
+      throw new McpError(ErrorCode.InvalidRequest, `無効なURIフォーマット: ${request.params.uri}`);
+    }
+    const fileId = match[1];
 
     try {
-      // 認証情報がない場合でもデモモードで動作するように修正
-      let auth;
-      try {
-        auth = getOAuth2Client();
-      } catch (e) {
-        console.error('OAuth認証情報の読み込みに失敗しました。デモモードで動作します:', e);
-        // APIキーなしでドライブクライアントを初期化
-        auth = new google.auth.GoogleAuth({
-          scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-        });
+      // ファイルのメタデータを取得
+      const fileMetadata = await drive.files.get({
+        fileId,
+        fields: 'name,mimeType',
+      });
+
+      const mimeType = fileMetadata.data.mimeType;
+      let content: Buffer;
+      let responseMimeType: string;
+
+      // Google Workspaceファイルの場合はエクスポート
+      const exportMimeType = getExportMimeType(mimeType || '');
+      if (exportMimeType) {
+        const exportResponse = await drive.files.export(
+          { fileId, mimeType: exportMimeType },
+          { responseType: 'arraybuffer' }
+        );
+        content = Buffer.from(exportResponse.data as ArrayBuffer);
+        responseMimeType = exportMimeType;
+      } else {
+        // 通常のファイルの場合はダウンロード
+        const fileResponse = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+        content = Buffer.from(fileResponse.data as ArrayBuffer);
+        responseMimeType = mimeType || 'application/octet-stream';
       }
-      this.drive = google.drive({ version: 'v3', auth });
-    } catch (error) {
-      console.error('Google Driveクライアントの初期化中にエラーが発生しました:', error);
-      throw error;
-    }
 
-    this.setupResourceHandlers();
-    this.setupToolHandlers();
-    
-    // エラーハンドリング
-    this.server.onerror = (error) => console.error('[MCP Error]', error);
-    process.on('SIGINT', async () => {
-      await this.server.close();
-      process.exit(0);
-    });
-    process.on('SIGTERM', async () => {
-      await this.server.close();
-      process.exit(0);
-    });
-  }
+      // テキストベースのファイルの場合は文字列に変換
+      const isTextBased =
+        responseMimeType.startsWith('text/') ||
+        responseMimeType === 'application/json' ||
+        responseMimeType === 'application/xml';
 
-  private setupResourceHandlers() {
-    // リソース一覧を提供
-    this.server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-      resources: [],  // 動的なリソースのため、空のリストを返す
-    }));
-
-    // リソース読み取り
-    this.server.setRequestHandler(
-      ReadResourceRequestSchema,
-      async (request) => {
-        const match = request.params.uri.match(/^gdrive:\/\/\/(.+)$/);
-        if (!match) {
-          throw new McpError(
-            ErrorCode.InvalidRequest,
-            `無効なURIフォーマット: ${request.params.uri}`
-          );
-        }
-        const fileId = match[1];
-
-        try {
-          // ファイルのメタデータを取得
-          const fileMetadata = await this.drive.files.get({
-            fileId,
-            fields: 'name,mimeType',
-          });
-
-          const mimeType = fileMetadata.data.mimeType;
-          let content: string | Buffer;
-          let responseMimeType: string;
-
-          // Google Workspaceファイルの場合はエクスポート
-          const exportMimeType = getExportMimeType(mimeType || '');
-          if (exportMimeType) {
-            const exportResponse = await this.drive.files.export({
-              fileId,
-              mimeType: exportMimeType,
-            }, { responseType: 'arraybuffer' });
-            
-            content = Buffer.from(exportResponse.data as ArrayBuffer);
-            responseMimeType = exportMimeType;
-          } else {
-            // 通常のファイルの場合はダウンロード
-            const fileResponse = await this.drive.files.get({
-              fileId,
-              alt: 'media',
-            }, { responseType: 'arraybuffer' });
-            
-            content = Buffer.from(fileResponse.data as ArrayBuffer);
-            responseMimeType = mimeType || 'application/octet-stream';
-          }
-
-          // テキストベースのファイルの場合は文字列に変換
-          const isTextBased = responseMimeType.startsWith('text/') || 
-                             responseMimeType === 'application/json' ||
-                             responseMimeType === 'application/xml';
-          
-          return {
-            contents: [
-              {
-                uri: request.params.uri,
-                mimeType: responseMimeType,
-                text: isTextBased ? content.toString('utf8') : content.toString('base64'),
-                isBase64Encoded: !isTextBased,
-              },
-            ],
-          };
-        } catch (error) {
-          console.error('ファイル取得中にエラーが発生しました:', error);
-          throw new McpError(
-            ErrorCode.InternalError,
-            `Google Drive APIエラー: ${(error as Error).message}`
-          );
-        }
-      }
-    );
-  }
-
-  private setupToolHandlers() {
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: [
-        {
-          name: 'search',
-          description: 'Google Driveでファイルを検索',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              query: {
-                type: 'string',
-                description: '検索クエリ',
-              },
-            },
-            required: ['query'],
+      return {
+        contents: [
+          {
+            uri: request.params.uri,
+            mimeType: responseMimeType,
+            text: isTextBased ? content.toString('utf8') : content.toString('base64'),
+            isBase64Encoded: !isTextBased,
           },
-        },
-      ],
-    }));
+        ],
+      };
+    } catch (error) {
+      console.error('ファイル取得中にエラーが発生しました:', error);
+      throw new McpError(ErrorCode.InternalError, `Google Drive APIエラー: ${(error as Error).message}`);
+    }
+  });
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      if (request.params.name !== 'search') {
-        throw new McpError(
-          ErrorCode.MethodNotFound,
-          `不明なツール: ${request.params.name}`
-        );
-      }
-
-      const { query } = request.params.arguments as { query: string };
+  mcpServer.registerTool(
+    'search',
+    {
+      description: 'Google Driveでファイルを検索',
+      inputSchema: {
+        query: z.string().describe('検索クエリ'),
+      },
+    },
+    async ({ query }) => {
       if (!query) {
-        throw new McpError(
-          ErrorCode.InvalidParams,
-          '検索クエリが指定されていません'
-        );
+        return {
+          content: [{ type: 'text' as const, text: '検索クエリが指定されていません' }],
+          isError: true,
+        };
       }
 
       try {
-        const response = await this.drive.files.list({
+        const response = await drive.files.list({
           q: query,
           fields: 'files(id, name, mimeType)',
           pageSize: 20,
@@ -278,39 +226,45 @@ class GDriveServer {
         }));
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(formattedResults, null, 2),
-            },
-          ],
+          content: [{ type: 'text' as const, text: JSON.stringify(formattedResults, null, 2) }],
         };
       } catch (error) {
         console.error('ファイル検索中にエラーが発生しました:', error);
         return {
-          content: [
-            {
-              type: 'text',
-              text: `Google Drive APIエラー: ${(error as Error).message}`,
-            },
-          ],
+          content: [{ type: 'text' as const, text: `Google Drive APIエラー: ${(error as Error).message}` }],
           isError: true,
         };
       }
-    });
-  }
+    }
+  );
 
-  async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    console.error('Google Drive MCPサーバーがstdioで実行中');
-  }
-}
+  return mcpServer;
+};
 
-// メイン処理
-if (process.argv.includes('auth')) {
-  authenticate().catch(console.error);
-} else {
-  const server = new GDriveServer();
-  server.run().catch(console.error);
+const run = async () => {
+  const mcpServer = createServer(createDriveClient());
+
+  // エラーハンドリング
+  mcpServer.server.onerror = (error) => console.error('[MCP Error]', error);
+  process.on('SIGINT', async () => {
+    await mcpServer.close();
+    process.exit(0);
+  });
+  process.on('SIGTERM', async () => {
+    await mcpServer.close();
+    process.exit(0);
+  });
+
+  await mcpServer.connect(new StdioServerTransport());
+  console.error('Google Drive MCPサーバーがstdioで実行中');
+};
+
+// メイン処理（テストから import された場合は起動しない）
+const isMain = process.argv[1] !== undefined && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
+if (isMain) {
+  if (process.argv.includes('auth')) {
+    authenticate().catch(console.error);
+  } else {
+    run().catch(console.error);
+  }
 }

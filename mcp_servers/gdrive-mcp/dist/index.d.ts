@@ -1,2 +1,5 @@
 #!/usr/bin/env node
-export {};
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { type drive_v3 } from 'googleapis';
+export declare const createDriveClient: () => drive_v3.Drive;
+export declare const createServer: (drive: drive_v3.Drive) => McpServer;
