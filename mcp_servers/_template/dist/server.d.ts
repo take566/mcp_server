@@ -1,2 +1,2 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-export declare function createServer(): Server;
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+export declare function createServer(): McpServer;

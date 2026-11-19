@@ -1,20 +1,14 @@
-export declare const helloTool: {
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+export declare const helloInputSchema: {
+    name: z.ZodString;
+};
+export declare const helloOutputSchema: {
+    greeting: z.ZodString;
+};
+export declare function hello({ name }: {
     name: string;
-    description: string;
-    inputSchema: {
-        type: "object";
-        properties: {
-            name: {
-                type: string;
-                description: string;
-            };
-        };
-        required: string[];
-    };
+}): {
+    greeting: string;
 };
-export declare function handleHello(args: Record<string, unknown> | undefined): {
-    content: {
-        type: "text";
-        text: string;
-    }[];
-};
+export declare function registerHelloTool(server: McpServer): void;
