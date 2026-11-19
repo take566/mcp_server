@@ -1,8 +1,11 @@
 {
   "name": "notion-mcp-server",
+  "version": "1.0.0",
   "private": true,
+  "description": "Passthrough wrapper for @notionhq/notion-mcp-server (see wrappers/notion.json)",
   "scripts": {
-    "build": "echo \"passthrough wrapper: no build needed\""
+    "build": "echo \"passthrough wrapper: no build needed\"",
+    "test": "vitest run --root ../.. tests/wrappers.test.mjs"
   },
   "dependencies": {
     "@notionhq/notion-mcp-server": "^2.2.1"

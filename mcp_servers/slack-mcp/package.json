@@ -1,15 +1,13 @@
 {
   "name": "slack-mcp",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Passthrough wrapper for @modelcontextprotocol/server-slack (see wrappers/slack.json)",
   "scripts": {
-    "build": "echo \"passthrough wrapper: no build needed\""
+    "build": "echo \"passthrough wrapper: no build needed\"",
+    "test": "vitest run --root ../.. tests/wrappers.test.mjs"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@modelcontextprotocol/server-slack": "^2025.4.25"
   }
