@@ -31,6 +31,8 @@
 |----------|-------------|
 | [TOOL_SEARCH_AND_PROGRAMMATIC_TOOL_USE.md](TOOL_SEARCH_AND_PROGRAMMATIC_TOOL_USE.md) | Tool Search & Programmatic Tool Use beta features |
 | [AGENTS.md](AGENTS.md) | Byterover MCP agent workflows reference |
+| [MIGRATION_registerTool.md](MIGRATION_registerTool.md) | registerTool + zod 移行に伴う互換性メモ（schema / エラー形式の差異） |
+| [CLAUDE_MD_PROPOSAL.md](CLAUDE_MD_PROPOSAL.md) | ルート CLAUDE.md への追記提案（npm workspaces / コマンド / 新規サーバー） |
 
 ## Proposals
 
