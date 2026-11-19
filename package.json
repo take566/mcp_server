@@ -26,6 +26,7 @@
     "format:check": "biome format .",
     "check": "biome check .",
     "sync-sdk": "node scripts/sync-sdk.mjs",
+    "verify:mcp": "node scripts/verify-mcp-config.mjs",
     "inspector": "npx -y @modelcontextprotocol/inspector",
     "inspector:drawio": "npx -y @modelcontextprotocol/inspector npx -y @drawio/mcp",
     "inspector:chrome-devtools": "npx -y @modelcontextprotocol/inspector npx -y chrome-devtools-mcp@latest",
