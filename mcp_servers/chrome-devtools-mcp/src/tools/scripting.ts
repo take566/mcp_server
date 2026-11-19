@@ -1,11 +1,12 @@
+import type { Dialog, Page } from "puppeteer-core";
+import { z } from "zod";
 import { browserManager } from "../browser-manager.js";
-import { textResult, type ToolResult } from "../types.js";
-import type { Dialog } from "puppeteer-core";
+import { defineTool, textResult } from "../types.js";
 
 let pendingDialog: Dialog | null = null;
 let dialogListenerAttached = false;
 
-function ensureDialogListener(page: import("puppeteer-core").Page): void {
+function ensureDialogListener(page: Page): void {
   if (dialogListenerAttached) return;
   page.on("dialog", (dialog: Dialog) => {
     pendingDialog = dialog;
@@ -14,76 +15,51 @@ function ensureDialogListener(page: import("puppeteer-core").Page): void {
   dialogListenerAttached = true;
 }
 
-// --- evaluate_script ---
-export const evaluateScriptTool = {
+export const evaluateScriptTool = defineTool({
   name: "evaluate_script",
   description: "Execute JavaScript in the browser page context and return the result",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      expression: { type: "string", description: "JavaScript expression or function body to evaluate" },
-    },
-    required: ["expression"],
+    expression: z.string().describe("JavaScript expression or function body to evaluate"),
   },
-};
+  handler: async ({ expression }) => {
+    const page = await browserManager.getSelectedPage();
+    ensureDialogListener(page);
 
-export async function handleEvaluateScript(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  ensureDialogListener(page);
+    try {
+      const result = await page.evaluate(expression);
+      const output = result === undefined ? "undefined" : JSON.stringify(result, null, 2);
+      return textResult(output);
+    } catch (error) {
+      return textResult(
+        `Evaluation error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  },
+});
 
-  try {
-    const result = await page.evaluate(args.expression as string);
-    const output =
-      result === undefined ? "undefined" : JSON.stringify(result, null, 2);
-    return textResult(output);
-  } catch (error) {
-    return textResult(
-      `Evaluation error: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-}
-
-// --- handle_dialog ---
-export const handleDialogTool = {
+export const handleDialogTool = defineTool({
   name: "handle_dialog",
   description: "Accept or dismiss a browser dialog (alert, confirm, prompt, beforeunload)",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      action: {
-        type: "string",
-        enum: ["accept", "dismiss"],
-        description: "Whether to accept or dismiss the dialog",
-      },
-      promptText: {
-        type: "string",
-        description: "Text to enter for prompt dialogs",
-      },
-    },
-    required: ["action"],
+    action: z.enum(["accept", "dismiss"]).describe("Whether to accept or dismiss the dialog"),
+    promptText: z.string().optional().describe("Text to enter for prompt dialogs"),
   },
-};
+  handler: async ({ action, promptText }) => {
+    if (!pendingDialog) {
+      return textResult("No pending dialog to handle.");
+    }
 
-export async function handleHandleDialog(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  if (!pendingDialog) {
-    return textResult("No pending dialog to handle.");
-  }
+    const dialog = pendingDialog;
+    pendingDialog = null;
 
-  const dialog = pendingDialog;
-  pendingDialog = null;
+    if (action === "accept") {
+      await dialog.accept(promptText);
+    } else {
+      await dialog.dismiss();
+    }
 
-  const action = args.action as "accept" | "dismiss";
-  if (action === "accept") {
-    await dialog.accept(args.promptText as string | undefined);
-  } else {
-    await dialog.dismiss();
-  }
+    return textResult(`Dialog "${dialog.type()}" ${action}ed. Message was: "${dialog.message()}"`);
+  },
+});
 
-  return textResult(
-    `Dialog "${dialog.type()}" ${action}ed. Message was: "${dialog.message()}"`,
-  );
-}
+export const scriptingTools = [evaluateScriptTool, handleDialogTool];

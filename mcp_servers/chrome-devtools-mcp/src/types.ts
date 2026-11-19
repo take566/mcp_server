@@ -1,3 +1,5 @@
+import type { z } from "zod";
+
 export interface ToolResult {
   [key: string]: unknown;
   content: Array<
@@ -35,9 +37,16 @@ export interface NetworkEntry {
   timing?: { startTime: number; endTime?: number };
 }
 
-export type ToolHandler = (
-  args: Record<string, unknown>,
-) => Promise<ToolResult>;
+export interface ToolDef<S extends z.ZodRawShape = z.ZodRawShape> {
+  name: string;
+  description: string;
+  inputSchema: S;
+  handler: (args: z.infer<z.ZodObject<S>>) => Promise<ToolResult>;
+}
+
+export function defineTool<S extends z.ZodRawShape>(def: ToolDef<S>): ToolDef<S> {
+  return def;
+}
 
 export function textResult(text: string): ToolResult {
   return { content: [{ type: "text", text }] };

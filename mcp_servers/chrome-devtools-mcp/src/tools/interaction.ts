@@ -1,267 +1,204 @@
+import type { ElementHandle } from "puppeteer-core";
+import { z } from "zod";
 import { browserManager } from "../browser-manager.js";
 import { resolveUid, takeSnapshot } from "../uid-resolver.js";
-import { textResult, type ToolResult } from "../types.js";
+import { defineTool, textResult } from "../types.js";
 
-async function maybeSnapshot(
-  includeSnapshot: boolean,
-): Promise<string> {
+async function maybeSnapshot(includeSnapshot: boolean | undefined): Promise<string> {
   if (!includeSnapshot) return "";
   const page = await browserManager.getSelectedPage();
   const snapshot = await takeSnapshot(page);
-  return "\n\n--- Page Snapshot ---\n" + snapshot;
+  return `\n\n--- Page Snapshot ---\n${snapshot}`;
 }
 
-// --- click ---
-export const clickTool = {
+async function clearAndType(
+  page: Awaited<ReturnType<typeof browserManager.getSelectedPage>>,
+  element: ElementHandle,
+  value: string,
+): Promise<void> {
+  await element.click({ count: 3 });
+  await page.keyboard.press("Backspace");
+  await element.type(value);
+}
+
+export const clickTool = defineTool({
   name: "click",
   description: "Click an element identified by UID from the accessibility snapshot",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      uid: { type: "string", description: "Element UID from snapshot" },
-      dblClick: { type: "boolean", description: "Double-click instead of single click" },
-      includeSnapshot: { type: "boolean", description: "Include page snapshot after action" },
-    },
-    required: ["uid"],
+    uid: z.string().describe("Element UID from snapshot"),
+    dblClick: z.boolean().optional().describe("Double-click instead of single click"),
+    includeSnapshot: z.boolean().optional().describe("Include page snapshot after action"),
   },
-};
+  handler: async ({ uid, dblClick, includeSnapshot }) => {
+    const page = await browserManager.getSelectedPage();
+    const element = await resolveUid(page, uid);
 
-export async function handleClick(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const element = await resolveUid(page, args.uid as string);
+    if (dblClick) {
+      await element.click({ count: 2 });
+    } else {
+      await element.click();
+    }
 
-  if (args.dblClick) {
-    await element.click({ count: 2 });
-  } else {
-    await element.click();
-  }
+    return textResult(`Clicked element ${uid}${await maybeSnapshot(includeSnapshot)}`);
+  },
+});
 
-  const extra = await maybeSnapshot(!!args.includeSnapshot);
-  return textResult(`Clicked element ${args.uid}` + extra);
-}
-
-// --- fill ---
-export const fillTool = {
+export const fillTool = defineTool({
   name: "fill",
   description: "Clear and fill a text input element with a value",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      uid: { type: "string", description: "Element UID from snapshot" },
-      value: { type: "string", description: "Value to fill" },
-      includeSnapshot: { type: "boolean", description: "Include page snapshot after action" },
-    },
-    required: ["uid", "value"],
+    uid: z.string().describe("Element UID from snapshot"),
+    value: z.string().describe("Value to fill"),
+    includeSnapshot: z.boolean().optional().describe("Include page snapshot after action"),
   },
-};
+  handler: async ({ uid, value, includeSnapshot }) => {
+    const page = await browserManager.getSelectedPage();
+    const element = await resolveUid(page, uid);
+    await clearAndType(page, element, value);
+    return textResult(`Filled element ${uid} with "${value}"${await maybeSnapshot(includeSnapshot)}`);
+  },
+});
 
-export async function handleFill(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const element = await resolveUid(page, args.uid as string);
-
-  // Clear existing value
-  await element.click({ count: 3 });
-  await page.keyboard.press("Backspace");
-  await element.type(args.value as string);
-
-  const extra = await maybeSnapshot(!!args.includeSnapshot);
-  return textResult(`Filled element ${args.uid} with "${args.value}"` + extra);
-}
-
-// --- fill_form ---
-export const fillFormTool = {
+export const fillFormTool = defineTool({
   name: "fill_form",
   description: "Fill multiple form fields at once",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      elements: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            uid: { type: "string" },
-            value: { type: "string" },
-          },
-          required: ["uid", "value"],
-        },
-        description: "Array of {uid, value} pairs",
-      },
-      includeSnapshot: { type: "boolean" },
-    },
-    required: ["elements"],
+    elements: z
+      .array(z.object({ uid: z.string(), value: z.string() }))
+      .describe("Array of {uid, value} pairs"),
+    includeSnapshot: z.boolean().optional(),
   },
-};
+  handler: async ({ elements, includeSnapshot }) => {
+    const page = await browserManager.getSelectedPage();
 
-export async function handleFillForm(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const elements = args.elements as Array<{ uid: string; value: string }>;
+    for (const { uid, value } of elements) {
+      const element = await resolveUid(page, uid);
+      await clearAndType(page, element, value);
+    }
 
-  for (const { uid, value } of elements) {
-    const element = await resolveUid(page, uid);
-    await element.click({ count: 3 });
-    await page.keyboard.press("Backspace");
-    await element.type(value);
-  }
+    return textResult(`Filled ${elements.length} form fields${await maybeSnapshot(includeSnapshot)}`);
+  },
+});
 
-  const extra = await maybeSnapshot(!!args.includeSnapshot);
-  return textResult(`Filled ${elements.length} form fields` + extra);
-}
-
-// --- hover ---
-export const hoverTool = {
+export const hoverTool = defineTool({
   name: "hover",
   description: "Hover over an element",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      uid: { type: "string", description: "Element UID from snapshot" },
-      includeSnapshot: { type: "boolean" },
-    },
-    required: ["uid"],
+    uid: z.string().describe("Element UID from snapshot"),
+    includeSnapshot: z.boolean().optional(),
   },
-};
+  handler: async ({ uid, includeSnapshot }) => {
+    const page = await browserManager.getSelectedPage();
+    const element = await resolveUid(page, uid);
+    await element.hover();
+    return textResult(`Hovered over element ${uid}${await maybeSnapshot(includeSnapshot)}`);
+  },
+});
 
-export async function handleHover(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const element = await resolveUid(page, args.uid as string);
-  await element.hover();
-
-  const extra = await maybeSnapshot(!!args.includeSnapshot);
-  return textResult(`Hovered over element ${args.uid}` + extra);
-}
-
-// --- drag ---
-export const dragTool = {
+export const dragTool = defineTool({
   name: "drag",
   description: "Drag from one element to another",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      from_uid: { type: "string", description: "Source element UID" },
-      to_uid: { type: "string", description: "Target element UID" },
-      includeSnapshot: { type: "boolean" },
-    },
-    required: ["from_uid", "to_uid"],
+    from_uid: z.string().describe("Source element UID"),
+    to_uid: z.string().describe("Target element UID"),
+    includeSnapshot: z.boolean().optional(),
   },
-};
+  handler: async ({ from_uid, to_uid, includeSnapshot }) => {
+    const page = await browserManager.getSelectedPage();
+    const fromEl = await resolveUid(page, from_uid);
+    const toEl = await resolveUid(page, to_uid);
 
-export async function handleDrag(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const fromEl = await resolveUid(page, args.from_uid as string);
-  const toEl = await resolveUid(page, args.to_uid as string);
+    const fromBox = await fromEl.boundingBox();
+    const toBox = await toEl.boundingBox();
+    if (!fromBox || !toBox) throw new Error("Cannot get element positions for drag.");
 
-  const fromBox = await fromEl.boundingBox();
-  const toBox = await toEl.boundingBox();
-  if (!fromBox || !toBox) throw new Error("Cannot get element positions for drag.");
+    const fromCenter = { x: fromBox.x + fromBox.width / 2, y: fromBox.y + fromBox.height / 2 };
+    const toCenter = { x: toBox.x + toBox.width / 2, y: toBox.y + toBox.height / 2 };
 
-  const fromCenter = { x: fromBox.x + fromBox.width / 2, y: fromBox.y + fromBox.height / 2 };
-  const toCenter = { x: toBox.x + toBox.width / 2, y: toBox.y + toBox.height / 2 };
+    await page.mouse.move(fromCenter.x, fromCenter.y);
+    await page.mouse.down();
+    await page.mouse.move(toCenter.x, toCenter.y, { steps: 10 });
+    await page.mouse.up();
 
-  await page.mouse.move(fromCenter.x, fromCenter.y);
-  await page.mouse.down();
-  await page.mouse.move(toCenter.x, toCenter.y, { steps: 10 });
-  await page.mouse.up();
+    return textResult(`Dragged from ${from_uid} to ${to_uid}${await maybeSnapshot(includeSnapshot)}`);
+  },
+});
 
-  const extra = await maybeSnapshot(!!args.includeSnapshot);
-  return textResult(`Dragged from ${args.from_uid} to ${args.to_uid}` + extra);
-}
-
-// --- type_text ---
-export const typeTextTool = {
+export const typeTextTool = defineTool({
   name: "type_text",
   description: "Type text using keyboard (types into the currently focused element)",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      text: { type: "string", description: "Text to type" },
-      submit: { type: "boolean", description: "Press Enter after typing" },
-    },
-    required: ["text"],
+    text: z.string().describe("Text to type"),
+    submit: z.boolean().optional().describe("Press Enter after typing"),
   },
-};
+  handler: async ({ text, submit }) => {
+    const page = await browserManager.getSelectedPage();
+    await page.keyboard.type(text);
+    if (submit) {
+      await page.keyboard.press("Enter");
+    }
+    return textResult(`Typed "${text}"${submit ? " and submitted" : ""}`);
+  },
+});
 
-export async function handleTypeText(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  await page.keyboard.type(args.text as string);
-  if (args.submit) {
-    await page.keyboard.press("Enter");
-  }
-  return textResult(`Typed "${args.text}"${args.submit ? " and submitted" : ""}`);
-}
+type KeyInput = Parameters<
+  Awaited<ReturnType<typeof browserManager.getSelectedPage>>["keyboard"]["press"]
+>[0];
 
-// --- press_key ---
-export const pressKeyTool = {
+export const pressKeyTool = defineTool({
   name: "press_key",
   description: "Press a keyboard key (e.g. Enter, Tab, Escape, ArrowDown)",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      key: { type: "string", description: "Key name (e.g. Enter, Tab, Escape)" },
-      modifiers: {
-        type: "array",
-        items: { type: "string" },
-        description: "Modifier keys (e.g. ['Shift', 'Control'])",
-      },
-    },
-    required: ["key"],
+    key: z.string().describe("Key name (e.g. Enter, Tab, Escape)"),
+    modifiers: z
+      .array(z.string())
+      .optional()
+      .describe("Modifier keys (e.g. ['Shift', 'Control'])"),
   },
-};
+  handler: async ({ key, modifiers }) => {
+    const page = await browserManager.getSelectedPage();
+    const mods = modifiers ?? [];
 
-export async function handlePressKey(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const modifiers = (args.modifiers as string[] | undefined) ?? [];
+    const held: string[] = [];
+    try {
+      for (const mod of mods) {
+        await page.keyboard.down(mod as KeyInput);
+        held.push(mod);
+      }
+      await page.keyboard.press(key as KeyInput);
+    } finally {
+      for (const mod of held.reverse()) {
+        await page.keyboard.up(mod as KeyInput);
+      }
+    }
 
-  for (const mod of modifiers) {
-    await page.keyboard.down(mod as any);
-  }
-  await page.keyboard.press(args.key as any);
-  for (const mod of modifiers.reverse()) {
-    await page.keyboard.up(mod as any);
-  }
+    return textResult(`Pressed ${mods.length ? `${mods.join("+")}+` : ""}${key}`);
+  },
+});
 
-  return textResult(`Pressed ${modifiers.length ? modifiers.join("+") + "+" : ""}${args.key}`);
-}
-
-// --- upload_file ---
-export const uploadFileTool = {
+export const uploadFileTool = defineTool({
   name: "upload_file",
   description: "Upload files to a file input element",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      uid: { type: "string", description: "File input element UID" },
-      filePaths: {
-        type: "array",
-        items: { type: "string" },
-        description: "Absolute paths to files to upload",
-      },
-    },
-    required: ["uid", "filePaths"],
+    uid: z.string().describe("File input element UID"),
+    filePaths: z.array(z.string()).describe("Absolute paths to files to upload"),
   },
-};
+  handler: async ({ uid, filePaths }) => {
+    const page = await browserManager.getSelectedPage();
+    const element = await resolveUid(page, uid);
+    const inputEl = element as unknown as ElementHandle<HTMLInputElement>;
+    await inputEl.uploadFile(...filePaths);
+    return textResult(`Uploaded ${filePaths.length} file(s) to element ${uid}`);
+  },
+});
 
-export async function handleUploadFile(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const element = await resolveUid(page, args.uid as string);
-  const filePaths = args.filePaths as string[];
-  const inputEl = element as unknown as import("puppeteer-core").ElementHandle<HTMLInputElement>;
-  await inputEl.uploadFile(...filePaths);
-  return textResult(`Uploaded ${filePaths.length} file(s) to element ${args.uid}`);
-}
+export const interactionTools = [
+  clickTool,
+  fillTool,
+  fillFormTool,
+  hoverTool,
+  dragTool,
+  typeTextTool,
+  pressKeyTool,
+  uploadFileTool,
+];

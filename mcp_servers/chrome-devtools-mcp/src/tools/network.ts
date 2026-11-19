@@ -1,73 +1,58 @@
+import { z } from "zod";
 import { browserManager } from "../browser-manager.js";
-import { textResult, type ToolResult } from "../types.js";
+import { defineTool, textResult } from "../types.js";
 
-// --- list_network_requests ---
-export const listNetworkRequestsTool = {
+export const listNetworkRequestsTool = defineTool({
   name: "list_network_requests",
   description: "List network requests captured from the browser page",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      pageId: { type: "number", description: "Page ID (default: selected page)" },
-      resourceTypes: {
-        type: "array",
-        items: { type: "string" },
-        description: "Filter by resource types (e.g. ['document', 'xhr', 'fetch', 'script'])",
-      },
-      limit: { type: "number", description: "Max requests to return (default: 50)" },
-    },
+    pageId: z.number().optional().describe("Page ID (default: selected page)"),
+    resourceTypes: z
+      .array(z.string())
+      .optional()
+      .describe("Filter by resource types (e.g. ['document', 'xhr', 'fetch', 'script'])"),
+    limit: z.number().optional().describe("Max requests to return (default: 50)"),
   },
-};
+  handler: async ({ pageId, resourceTypes, limit }) => {
+    await browserManager.ensureConnected();
+    let requests = browserManager.getNetworkRequests(pageId);
 
-export async function handleListNetworkRequests(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  await browserManager.ensureConnected();
-  let requests = browserManager.getNetworkRequests(args.pageId as number | undefined);
+    if (resourceTypes?.length) {
+      requests = requests.filter((r) => resourceTypes.includes(r.resourceType));
+    }
 
-  const resourceTypes = args.resourceTypes as string[] | undefined;
-  if (resourceTypes?.length) {
-    requests = requests.filter((r) => resourceTypes.includes(r.resourceType));
-  }
+    requests = requests.slice(-(limit ?? 50));
 
-  const limit = (args.limit as number) ?? 50;
-  requests = requests.slice(-limit);
+    if (requests.length === 0) {
+      return textResult("No network requests captured.");
+    }
 
-  if (requests.length === 0) {
-    return textResult("No network requests captured.");
-  }
+    const lines = requests.map(
+      (r) =>
+        `[${r.reqid}] ${r.method} ${r.status ?? "..."} ${r.url.slice(0, 120)}${r.url.length > 120 ? "..." : ""}`,
+    );
+    return textResult(lines.join("\n"));
+  },
+});
 
-  const lines = requests.map(
-    (r) =>
-      `[${r.reqid}] ${r.method} ${r.status ?? "..."} ${r.url.slice(0, 120)}${r.url.length > 120 ? "..." : ""}`,
-  );
-  return textResult(lines.join("\n"));
-}
-
-// --- get_network_request ---
-export const getNetworkRequestTool = {
+export const getNetworkRequestTool = defineTool({
   name: "get_network_request",
   description: "Get full details of a specific network request by ID",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      reqid: { type: "number", description: "Request ID" },
-      pageId: { type: "number", description: "Page ID (default: selected page)" },
-    },
-    required: ["reqid"],
+    reqid: z.number().describe("Request ID"),
+    pageId: z.number().optional().describe("Page ID (default: selected page)"),
   },
-};
+  handler: async ({ reqid, pageId }) => {
+    await browserManager.ensureConnected();
+    const requests = browserManager.getNetworkRequests(pageId);
+    const req = requests.find((r) => r.reqid === reqid);
 
-export async function handleGetNetworkRequest(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  await browserManager.ensureConnected();
-  const requests = browserManager.getNetworkRequests(args.pageId as number | undefined);
-  const req = requests.find((r) => r.reqid === (args.reqid as number));
+    if (!req) {
+      return textResult(`Network request ${reqid} not found.`);
+    }
 
-  if (!req) {
-    return textResult(`Network request ${args.reqid} not found.`);
-  }
+    return textResult(JSON.stringify(req, null, 2));
+  },
+});
 
-  return textResult(JSON.stringify(req, null, 2));
-}
+export const networkTools = [listNetworkRequestsTool, getNetworkRequestTool];
