@@ -2,7 +2,7 @@
 
 低レベル `Server` + `setRequestHandler`（ListTools / CallTool）から `McpServer.registerTool` + zod への移行（#42 openrouter / #43 _template / #44 gdrive / #45 slack・notion wrapper / #46 arxiv / #47 chrome-devtools、Refs #40）で生じた、クライアントから観測できる差異をまとめる。
 
-- 各項目は PR 本文と main 上のコードで確認済み。加えて `_template` / `arxiv-mcp` / `gdrive-mcp` / `openrouter-mcp` の `dist` を in-memory Client で実際に呼び出して、tools/list と tools/call の出力を確認した（SDK ^1.32.2）。
+- 各項目は PR 本文と main 上のコードで照合した（確認の範囲は各項目に記載。未再現のものは「未検証」）。加えて `_template` / `arxiv-mcp` / `gdrive-mcp` / `openrouter-mcp` の `dist` を in-memory Client で実際に呼び出して、tools/list と tools/call の出力を確認した（SDK ^1.32.2）。
 - 「移行前」の挙動は PR 本文と移行前コミット（git history）のコード読みに基づく。移行前ビルドの再実行はしていない。
 - 検証できなかった項目は「未検証」と明記する。
 
@@ -16,7 +16,9 @@
 | 不正な引数 | ハンドラに到達する前に SDK が検証し、`isError: true` の結果で返す。例: `MCP error -32602: Input validation error: Invalid arguments for tool hello: String must contain at least 1 character(s) at name` |
 | 未知のツール名 | `isError: true` の結果（`MCP error -32602: Tool nope not found`）。JSON-RPC エラーとしては投げられない |
 
-ツール名・`required`・プロパティ名/型は移行前後で維持されている（PR #42 / #46 / #47 の before/after 比較による。#44 は `query` に `minLength: 1` が加わった点のみ差異）。
+ツール名・プロパティ名・基本の型は移行前後で維持されている（PR #42 / #46 / #47 の before/after 比較による）。ただし下記サーバー別の差異（gdrive の `minLength`、openrouter の `minItems` / `required: []` 省略、_template の `outputSchema` 等）がある。
+
+上記の共通挙動は `_template` / `arxiv-mcp` / `gdrive-mcp` / `openrouter-mcp` で実行確認した。chrome-devtools-mcp は tools/call を再現しておらず未検証（同じ SDK 経路のため同様と推定）。
 
 ## サーバー別
 
