@@ -10,10 +10,11 @@
 
 | 項目 | 内容 |
 |------|------|
-| tools/list の `inputSchema` | zod 由来で `additionalProperties: false` と `$schema`（`http://json-schema.org/draft-07/schema#`）が付く |
+| tools/list の `inputSchema` | `$schema`（`http://json-schema.org/draft-07/schema#`）が付く。`additionalProperties: false` は zod 3 系では付いていたが、zod 4（PR #52 以降）では advertise されない |
 | tools/list の各ツール | `execution: { taskSupport: "forbidden" }` が付く |
 | サーバー capabilities | `tools: { listChanged: true }`（gdrive は `resources: { listChanged: true }` も） |
-| 不正な引数 | ハンドラに到達する前に SDK が検証し、`isError: true` の結果で返す。例: `MCP error -32602: Input validation error: Invalid arguments for tool hello: String must contain at least 1 character(s) at name` |
+| 不正な引数 | ハンドラに到達する前に SDK が検証し、`isError: true` の結果で返す。形式は `MCP error -32602: Input validation error: Invalid arguments for tool <name>: <zod メッセージ> at <field>`。メッセージ部分は zod のメジャーバージョンで変わる（末尾の節を参照） |
+| 未知のキー | サーバーは未知のキーを無視（strip）して成功する（`hello {name, extra:1}`、arxiv `get_paper_pdf_url {id, extra}` で確認）。schema に `additionalProperties: false` が載っていても、サーバー側で拒否はされない |
 | 未知のツール名 | `isError: true` の結果（`MCP error -32602: Tool nope not found`）。JSON-RPC エラーとしては投げられない |
 
 ツール名・プロパティ名・基本の型は移行前後で維持されている（PR #42 / #46 / #47 の before/after 比較による）。ただし下記サーバー別の差異（gdrive の `minLength`、openrouter の `minItems` / `required: []` 省略、_template の `outputSchema` 等）がある。
@@ -31,7 +32,7 @@
 
 ### _template（#43）
 
-- `hello.name` は `z.string().min(1)`。空文字は拒否され、`name` 欠落も `isError` の検証エラー（`Required at name`）になる。
+- `hello.name` は `z.string().min(1)`。空文字は拒否され、`name` 欠落も `isError` の検証エラー（zod 3: `Required at name` / zod 4: `Invalid input: expected string, received undefined at name`）になる。
 - `outputSchema` と `structuredContent` を持つ（テンプレートの新規仕様）。
 
 ### gdrive-mcp（#44）
@@ -44,7 +45,7 @@
 
 ### arxiv-mcp（#46）
 
-- `get_paper` の `ids` が配列以外の場合、入力検証エラー（`Expected array, received string at ids`）になる。旧実装は型検証がなく `getPaperById` 内の `ids.join` に到達していた（コード読みによる。「ids.join is not a function」という実メッセージの再現は未検証）。
+- `get_paper` の `ids` が配列以外の場合、入力検証エラー（zod 3: `Expected array, received string at ids` / zod 4: `Invalid input: expected array, received string at ids`。`ids` 欠落は zod 4 で `expected array, received undefined`）になる。旧実装は型検証がなく `getPaperById` 内の `ids.join` に到達していた（コード読みによる。「ids.join is not a function」という実メッセージの再現は未検証）。
 - `maxResults` の範囲や `group` の enum は、スキーマを変えないために意図的に追加していない（PR 本文）。
 
 ### chrome-devtools-mcp（#47）
@@ -63,6 +64,9 @@
 
 - エラー文字列の完全一致で分岐しているクライアントは影響を受ける。特に gdrive の「検索クエリが指定されていません」や、JSON-RPC エラーコード（-32601 / -32602 を例外として期待する実装）。現在は `isError: true` の tools/call 結果の本文テキスト（`MCP error -32602: ...`）で返る。
 - `isError` の結果を例外とは別経路で扱っているか確認する。
-- tools/list を厳密検証するクライアントは、`additionalProperties: false`（未知のキーを送ると拒否される）、`$schema`、`execution.taskSupport`、`minLength` / `minItems` を許容する必要がある。
+- tools/list を厳密検証するクライアントは、`$schema`、`execution.taskSupport`、`minLength` / `minItems` を許容する必要がある。`additionalProperties: false` は zod 3 では載り、zod 4 では載らない。
 - 範囲制約（openrouter の temperature など）は schema に載らないため、事前検証には使えない。呼び出して初めて分かる。
-- スキーマに載らない値を送るクライアントは、`additionalProperties: false` により拒否されうる。
+- `additionalProperties: false` が advertise されていても、サーバーは未知のキーを strip して成功させる。拒否するのは、schema をクライアント側で厳密検証するクライアントのみ。
+- エラー文言は zod のメジャーバージョンで変わる。zod 4 の例: `Too small: expected string to have >=1 characters`、`Too small: expected array to have >=1 items`、`Invalid input: expected array, received string`、`Invalid option: expected one of "a"|"b"`（zod 3 は `String must contain at least 1 character(s)` / `Array must contain at least 1 element(s)` / `Expected array, received string`）。openrouter の `.refine` メッセージは不変。文言ではなく `-32602` と `at <field>` で判定するのが安全。
+
+なお本ドキュメントの zod 4 に関する記述は、PR #52（`fix/deps-audit`、zod ^4.6.7）のブランチ先頭（a62cbe7）をビルドして確認したもの。#52 のマージ前は main の挙動は zod 3 系。
