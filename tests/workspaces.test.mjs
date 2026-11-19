@@ -8,7 +8,7 @@ const rootPkg = readJson("package.json");
 
 describe("monorepo foundation", () => {
   it("requires Node 22+", () => {
-    expect(rootPkg.engines?.node).toBe(">=22");
+    expect(rootPkg.engines?.node).toBe(">=22.12.0");
   });
 
   it("has a single root lockfile", () => {
