@@ -1,72 +1,55 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { handleListCategories, listCategoriesShape } from "./tools/categories.js";
 import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
-import type { ToolHandler } from "./types.js";
+  getPaperPdfUrlShape,
+  getPaperShape,
+  handleGetPaper,
+  handleGetPaperPdfUrl,
+} from "./tools/paper.js";
+import { handleSearchPapers, searchPapersDescription, searchPapersShape } from "./tools/search.js";
 
-import { searchPapersTool, handleSearchPapers } from "./tools/search.js";
-import { getPaperTool, handleGetPaper, getPaperPdfUrlTool, handleGetPaperPdfUrl } from "./tools/paper.js";
-import { listCategoriesTool, handleListCategories } from "./tools/categories.js";
-
-const allTools = [
-  searchPapersTool,
-  getPaperTool,
-  getPaperPdfUrlTool,
-  listCategoriesTool,
-];
-
-const handlers: Record<string, ToolHandler> = {
-  search_papers: handleSearchPapers,
-  get_paper: handleGetPaper,
-  get_paper_pdf_url: handleGetPaperPdfUrl,
-  list_categories: handleListCategories,
-};
-
-export function createServer(): Server {
-  const server = new Server(
-    {
-      name: "arxiv-mcp",
-      version: "0.1.0",
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    },
-  );
-
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: allTools,
-  }));
-
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
-    const handler = handlers[name];
-
-    if (!handler) {
-      return {
-        content: [{ type: "text", text: `Unknown tool: ${name}` }],
-        isError: true,
-      };
-    }
-
-    try {
-      return await handler(args ?? {});
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-          },
-        ],
-        isError: true,
-      };
-    }
+export function createServer(): McpServer {
+  const server = new McpServer({
+    name: "arxiv-mcp",
+    version: "0.1.0",
   });
 
-  server.onerror = (error) => {
+  server.registerTool(
+    "search_papers",
+    { description: searchPapersDescription, inputSchema: searchPapersShape },
+    (args) => handleSearchPapers(args),
+  );
+
+  server.registerTool(
+    "get_paper",
+    {
+      description:
+        "Get detailed information about specific arXiv papers by their IDs. " +
+        "Returns full metadata including title, authors, abstract, categories, and links.",
+      inputSchema: getPaperShape,
+    },
+    (args) => handleGetPaper(args),
+  );
+
+  server.registerTool(
+    "get_paper_pdf_url",
+    {
+      description: "Get the direct PDF download URL for an arXiv paper",
+      inputSchema: getPaperPdfUrlShape,
+    },
+    (args) => handleGetPaperPdfUrl(args),
+  );
+
+  server.registerTool(
+    "list_categories",
+    {
+      description: "List arXiv subject categories, optionally filtered by group",
+      inputSchema: listCategoriesShape,
+    },
+    (args) => handleListCategories(args),
+  );
+
+  server.server.onerror = (error) => {
     console.error("[MCP Error]", error);
   };
 

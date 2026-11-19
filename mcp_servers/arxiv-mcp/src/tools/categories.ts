@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { textResult, type ToolResult } from "../types.js";
 
 const ARXIV_CATEGORIES: Record<string, Record<string, string>> = {
@@ -63,25 +64,17 @@ const ARXIV_CATEGORIES: Record<string, Record<string, string>> = {
   },
 };
 
-export const listCategoriesTool = {
-  name: "list_categories",
-  description: "List arXiv subject categories, optionally filtered by group",
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      group: {
-        type: "string",
-        description:
-          "Filter by group name (e.g. 'Computer Science', 'Physics', 'Statistics'). Omit to list all.",
-      },
-    },
-  },
+export const listCategoriesShape = {
+  group: z
+    .string()
+    .optional()
+    .describe(
+      "Filter by group name (e.g. 'Computer Science', 'Physics', 'Statistics'). Omit to list all.",
+    ),
 };
 
-export async function handleListCategories(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const group = args.group as string | undefined;
+export async function handleListCategories(args: { group?: string }): Promise<ToolResult> {
+  const { group } = args;
 
   if (group) {
     const cats = ARXIV_CATEGORIES[group];
