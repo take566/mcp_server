@@ -22,19 +22,21 @@ npm run inspect
 ## Adding Tools
 
 1. Create a new file in `src/tools/` (use `hello.ts` as reference)
-2. Define the zod schema, tool definition, and handler function
-3. Import and register the tool in `src/server.ts`:
-   - Add to the `tools` array in `ListToolsRequestSchema` handler
-   - Add a `case` in the `CallToolRequestSchema` switch
+2. Define zod input/output shapes and export a `registerXxxTool(server)` function that calls `server.registerTool(name, { title, description, inputSchema, outputSchema }, handler)`
+3. Return both `content` (text) and `structuredContent` (matching `outputSchema`)
+4. Call `registerXxxTool(server)` in `src/server.ts`
+5. Add a test in `src/*.test.ts` (see `server.test.ts`: in-memory client/transport pair)
 
 ## File Structure
 
 ```
 src/
-  index.ts       # Entry point - stdio transport and graceful shutdown
-  server.ts      # Server config, capabilities, tool registration
+  index.ts        # stdio entry point (dist/index.js)
+  http.ts         # optional Streamable HTTP entry (dist/http.js, stateless, loopback)
+  server.ts       # createServer(): McpServer + tool registration
+  server.test.ts  # vitest: listTools + callTool via InMemoryTransport
   tools/
-    hello.ts     # Sample tool (delete after adding your own)
+    hello.ts      # Sample tool (delete after adding your own)
 ```
 
 ## Scripts
@@ -43,7 +45,10 @@ src/
 |---------|-------------|
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm run dev` | Watch mode compilation |
-| `npm start` | Run the compiled server |
+| `npm start` | Run the compiled server over stdio |
+| `npm run start:http` | Run the Streamable HTTP entry on `127.0.0.1:3000/mcp` |
+| `npm run typecheck` | Type check without emit |
+| `npm test` | Run vitest for this workspace |
 | `npm run inspect` | Launch MCP Inspector for testing |
 
 ## Claude Desktop Configuration

@@ -7,75 +7,97 @@
 - [ ] 1. サーバーディレクトリ作成
 - [ ] 2. package.json設定
 - [ ] 3. tsconfig.json設定
-- [ ] 4. src/index.ts実装
+- [ ] 4. registerTool + zod でツール実装
 - [ ] 5. ビルドスクリプト追加
 - [ ] 6. テスト追加 (推奨)
 - [ ] 7. CI/CD自動統合確認
 
 ### ステップバイステップ
 
-#### 1. ディレクトリ構造作成
+#### 1. テンプレートをコピー
 ```bash
-mkdir -p mcp_servers/your-mcp-server/src
-cd mcp_servers/your-mcp-server
+cp -r mcp_servers/_template mcp_servers/your-mcp-server
+rm -rf mcp_servers/your-mcp-server/dist
 ```
+その後ルート `package.json` の `workspaces` に `mcp_servers/your-mcp-server` を追加し、`npm install` を実行する。
 
-#### 2. package.json作成
+#### 2. package.json
+`name`（例: `@mcp/your-server`）と `description` を書き換える。`test` スクリプトの `mcp_servers/_template/src` も新ディレクトリ名に変更する。
 ```json
 {
-  "name": "your-mcp-server",
-  "version": "1.0.0",
+  "name": "@mcp/your-server",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && shx chmod +x dist/*.js",
-    "test": "vitest run"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:http": "node dist/http.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. mcp_servers/your-mcp-server/src"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.3"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.0",
-    "@types/node": "^22.0.0",
-    "shx": "^0.3.4"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^3.25.76"
   }
 }
 ```
 
-**重要**: SDK バージョンは `^1.25.3` を使用してください。
+**重要**: SDK は `^1.32.2`、`tsconfig.json` はルートの `tsconfig.base.json` を extends する。vitest / typescript / biome はルートで一元管理。
 
-#### 3. tsconfig.json作成
+#### 3. tsconfig.json
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "esModuleInterop": true
-  }
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "outDir": "./dist", "rootDir": "./src" },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
 }
 ```
 
-#### 4. src/index.ts実装
+#### 4. ツール実装 (`McpServer.registerTool` + zod)
+低レベル `Server` + `setRequestHandler` ではなく `McpServer.registerTool` を使う。入力・出力は zod スキーマで定義し、`structuredContent` を返す。
 ```typescript
-#!/usr/bin/env node
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+// src/tools/hello.ts
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 
-const server = new Server({
-  name: 'your-mcp-server',
-  version: '1.0.0'
-}, {
-  capabilities: { tools: {} }
-});
+export function registerHelloTool(server: McpServer): void {
+  server.registerTool(
+    "hello",
+    {
+      title: "Hello",
+      description: "Returns a greeting for the given name",
+      inputSchema: { name: z.string().min(1).describe("Name to greet") },
+      outputSchema: { greeting: z.string() },
+    },
+    async ({ name }) => {
+      const result = { greeting: `Hello, ${name}!` };
+      return { content: [{ type: "text", text: result.greeting }], structuredContent: result };
+    },
+  );
+}
+```
+```typescript
+// src/server.ts
+export function createServer(): McpServer {
+  const server = new McpServer({ name: "your-mcp-server", version: "1.0.0" });
+  registerHelloTool(server);
+  return server;
+}
+```
+```typescript
+// src/index.ts (stdio)
+await createServer().connect(new StdioServerTransport());
+```
+Streamable HTTP が必要な場合は `src/http.ts`（ステートレス・loopback のみ）を参照。ログは必ず `console.error`（stdout は JSON-RPC 専用）。
 
-// Tool handlers here...
+#### 4.5 テスト
+`InMemoryTransport.createLinkedPair()` で Client と Server を接続し、`listTools` と `callTool` を検証する（`src/server.test.ts` 参照）。ルートで `npm test` を実行すると全 workspace のテストが走る。
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+#### 4.6 検証
+```bash
+npm run build -w @mcp/your-server
+npm run typecheck && npm run lint && npm run format:check && npm test
 ```
 
 #### 5. CI/CD自動統合
@@ -178,11 +200,11 @@ GitHub Actions タブで確認:
 
 **問題**: SDK互換性エラー
 **原因**: 古いSDKバージョン使用
-**解決**: `@modelcontextprotocol/sdk@^1.25.3` に更新
+**解決**: `@modelcontextprotocol/sdk@^1.32.2` に更新
 
 **問題**: ビルド失敗
 **原因**: package.jsonのビルドスクリプト不足
-**解決**: `"build": "tsc && shx chmod +x dist/*.js"` を追加
+**解決**: `"build": "tsc"` を追加
 
 ---
 
