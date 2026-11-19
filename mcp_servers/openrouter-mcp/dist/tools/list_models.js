@@ -1,27 +1,16 @@
 import { z } from "zod";
 import { openrouterFetch } from "../openrouter.js";
-const ListModelsInputSchema = z.object({
-    query: z
-        .string()
+// Integer / range checks use refine so the advertised JSON Schema type stays "number".
+export const listModelsInputShape = {
+    query: z.string().optional().describe("Substring filter on model id"),
+    limit: z
+        .number()
+        .refine((n) => Number.isInteger(n) && n > 0 && n <= 200, "must be an integer between 1 and 200")
         .optional()
-        .describe("Case-insensitive substring filter on model id"),
-    limit: z.number().int().positive().max(200).optional(),
-});
-export const listModelsTool = {
-    name: "openrouter_list_models",
-    description: "List models available on OpenRouter. Optionally filter by substring and limit results.",
-    inputSchema: {
-        type: "object",
-        properties: {
-            query: { type: "string", description: "Substring filter on model id" },
-            limit: { type: "number", description: "Max results (default 50)" },
-        },
-        required: [],
-    },
+        .describe("Max results (default 50)"),
 };
-export async function handleListModels(args) {
+export async function handleListModels(input) {
     try {
-        const input = ListModelsInputSchema.parse(args ?? {});
         const response = await openrouterFetch("/models");
         const data = (await response.json());
         let models = data.data;
@@ -35,7 +24,9 @@ export async function handleListModels(args) {
             .map((m) => {
             const ctx = m.context_length ? ` ctx=${m.context_length}` : "";
             const pIn = m.pricing?.prompt ? ` in=$${m.pricing.prompt}` : "";
-            const pOut = m.pricing?.completion ? ` out=$${m.pricing.completion}` : "";
+            const pOut = m.pricing?.completion
+                ? ` out=$${m.pricing.completion}`
+                : "";
             return `- ${m.id}${ctx}${pIn}${pOut}`;
         })
             .join("\n");
@@ -50,10 +41,13 @@ export async function handleListModels(args) {
     }
     catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        return {
-            content: [{ type: "text", text: message }],
-            isError: true,
-        };
+        return { content: [{ type: "text", text: message }], isError: true };
     }
+}
+export function registerListModelsTool(server) {
+    server.registerTool("openrouter_list_models", {
+        description: "List models available on OpenRouter. Optionally filter by substring and limit results.",
+        inputSchema: listModelsInputShape,
+    }, (args) => handleListModels(args));
 }
 //# sourceMappingURL=list_models.js.map

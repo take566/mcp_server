@@ -1,27 +1,22 @@
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { openrouterFetch } from "../openrouter.js";
 
-const ListModelsInputSchema = z.object({
-  query: z
-    .string()
+// Integer / range checks use refine so the advertised JSON Schema type stays "number".
+export const listModelsInputShape = {
+  query: z.string().optional().describe("Substring filter on model id"),
+  limit: z
+    .number()
+    .refine(
+      (n) => Number.isInteger(n) && n > 0 && n <= 200,
+      "must be an integer between 1 and 200",
+    )
     .optional()
-    .describe("Case-insensitive substring filter on model id"),
-  limit: z.number().int().positive().max(200).optional(),
-});
-
-export const listModelsTool = {
-  name: "openrouter_list_models",
-  description:
-    "List models available on OpenRouter. Optionally filter by substring and limit results.",
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      query: { type: "string", description: "Substring filter on model id" },
-      limit: { type: "number", description: "Max results (default 50)" },
-    },
-    required: [],
-  },
+    .describe("Max results (default 50)"),
 };
+
+type ListModelsInput = z.infer<z.ZodObject<typeof listModelsInputShape>>;
 
 interface ModelInfo {
   id: string;
@@ -35,10 +30,9 @@ interface ModelListResponse {
 }
 
 export async function handleListModels(
-  args: Record<string, unknown> | undefined,
-) {
+  input: ListModelsInput,
+): Promise<CallToolResult> {
   try {
-    const input = ListModelsInputSchema.parse(args ?? {});
     const response = await openrouterFetch("/models");
     const data = (await response.json()) as ModelListResponse;
 
@@ -54,7 +48,9 @@ export async function handleListModels(
       .map((m) => {
         const ctx = m.context_length ? ` ctx=${m.context_length}` : "";
         const pIn = m.pricing?.prompt ? ` in=$${m.pricing.prompt}` : "";
-        const pOut = m.pricing?.completion ? ` out=$${m.pricing.completion}` : "";
+        const pOut = m.pricing?.completion
+          ? ` out=$${m.pricing.completion}`
+          : "";
         return `- ${m.id}${ctx}${pIn}${pOut}`;
       })
       .join("\n");
@@ -62,16 +58,25 @@ export async function handleListModels(
     return {
       content: [
         {
-          type: "text" as const,
+          type: "text",
           text: `Found ${models.length} model(s):\n${summary}`,
         },
       ],
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: "text" as const, text: message }],
-      isError: true,
-    };
+    return { content: [{ type: "text", text: message }], isError: true };
   }
+}
+
+export function registerListModelsTool(server: McpServer): void {
+  server.registerTool(
+    "openrouter_list_models",
+    {
+      description:
+        "List models available on OpenRouter. Optionally filter by substring and limit results.",
+      inputSchema: listModelsInputShape,
+    },
+    (args) => handleListModels(args),
+  );
 }
