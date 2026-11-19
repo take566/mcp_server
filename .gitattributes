@@ -3,3 +3,6 @@
 
 # Force JSON files to use LF in the repository.
 *.json text eol=lf
+
+# Build output: keep LF in index and working tree.
+mcp_servers/**/dist/** text eol=lf
