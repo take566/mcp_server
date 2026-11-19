@@ -27,8 +27,6 @@ export interface ToolResult {
   isError?: boolean;
 }
 
-export type ToolHandler = (args: Record<string, unknown>) => Promise<ToolResult>;
-
 export function textResult(text: string): ToolResult {
   return { content: [{ type: "text", text }] };
 }

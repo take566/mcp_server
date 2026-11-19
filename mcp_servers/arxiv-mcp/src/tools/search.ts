@@ -1,60 +1,45 @@
+import { z } from "zod";
 import { searchPapers } from "../arxiv-client.js";
-import { textResult, type ToolResult } from "../types.js";
+import { type ToolResult, textResult } from "../types.js";
 
-export const searchPapersTool = {
-  name: "search_papers",
-  description:
-    "Search arXiv papers by query. Supports arXiv query syntax: " +
-    "field prefixes (ti:, au:, abs:, cat:, all:), boolean operators (AND, OR, ANDNOT). " +
-    "Examples: 'ti:attention AND au:vaswani', 'cat:cs.AI AND all:transformer'",
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      query: {
-        type: "string",
-        description:
-          "Search query. Use arXiv syntax: ti: (title), au: (author), abs: (abstract), " +
-          "cat: (category), all: (all fields). Example: 'all:large language model'",
-      },
-      maxResults: {
-        type: "number",
-        description: "Max papers to return (1-100, default: 10)",
-      },
-      start: {
-        type: "number",
-        description: "Pagination offset (default: 0)",
-      },
-      sortBy: {
-        type: "string",
-        enum: ["relevance", "lastUpdatedDate", "submittedDate"],
-        description: "Sort field (default: relevance)",
-      },
-      sortOrder: {
-        type: "string",
-        enum: ["ascending", "descending"],
-        description: "Sort direction (default: descending)",
-      },
-      categories: {
-        type: "array",
-        items: { type: "string" },
-        description:
-          "Filter by categories (e.g. ['cs.AI', 'cs.CL', 'stat.ML'])",
-      },
-    },
-    required: ["query"],
-  },
+export const searchPapersDescription =
+  "Search arXiv papers by query. Supports arXiv query syntax: " +
+  "field prefixes (ti:, au:, abs:, cat:, all:), boolean operators (AND, OR, ANDNOT). " +
+  "Examples: 'ti:attention AND au:vaswani', 'cat:cs.AI AND all:transformer'";
+
+export const searchPapersShape = {
+  query: z
+    .string()
+    .describe(
+      "Search query. Use arXiv syntax: ti: (title), au: (author), abs: (abstract), " +
+        "cat: (category), all: (all fields). Example: 'all:large language model'",
+    ),
+  maxResults: z.number().optional().describe("Max papers to return (1-100, default: 10)"),
+  start: z.number().optional().describe("Pagination offset (default: 0)"),
+  sortBy: z
+    .enum(["relevance", "lastUpdatedDate", "submittedDate"])
+    .optional()
+    .describe("Sort field (default: relevance)"),
+  sortOrder: z
+    .enum(["ascending", "descending"])
+    .optional()
+    .describe("Sort direction (default: descending)"),
+  categories: z
+    .array(z.string())
+    .optional()
+    .describe("Filter by categories (e.g. ['cs.AI', 'cs.CL', 'stat.ML'])"),
 };
 
-export async function handleSearchPapers(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
+export type SearchPapersArgs = z.infer<z.ZodObject<typeof searchPapersShape>>;
+
+export async function handleSearchPapers(args: SearchPapersArgs): Promise<ToolResult> {
   const result = await searchPapers({
-    query: args.query as string,
-    maxResults: (args.maxResults as number) ?? 10,
-    start: (args.start as number) ?? 0,
-    sortBy: args.sortBy as "relevance" | "lastUpdatedDate" | "submittedDate" | undefined,
-    sortOrder: args.sortOrder as "ascending" | "descending" | undefined,
-    categories: args.categories as string[] | undefined,
+    query: args.query,
+    maxResults: args.maxResults ?? 10,
+    start: args.start ?? 0,
+    sortBy: args.sortBy,
+    sortOrder: args.sortOrder,
+    categories: args.categories,
   });
 
   if (result.papers.length === 0) {

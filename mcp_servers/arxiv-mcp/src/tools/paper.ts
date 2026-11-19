@@ -1,30 +1,16 @@
+import { z } from "zod";
 import { getPaperById } from "../arxiv-client.js";
 import { textResult, type ToolResult } from "../types.js";
 
 // --- get_paper ---
-export const getPaperTool = {
-  name: "get_paper",
-  description:
-    "Get detailed information about specific arXiv papers by their IDs. " +
-    "Returns full metadata including title, authors, abstract, categories, and links.",
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      ids: {
-        type: "array",
-        items: { type: "string" },
-        description:
-          "arXiv paper IDs (e.g. ['2301.07041', '1706.03762', 'cs/0112017'])",
-      },
-    },
-    required: ["ids"],
-  },
+export const getPaperShape = {
+  ids: z
+    .array(z.string())
+    .describe("arXiv paper IDs (e.g. ['2301.07041', '1706.03762', 'cs/0112017'])"),
 };
 
-export async function handleGetPaper(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const ids = args.ids as string[];
+export async function handleGetPaper(args: { ids: string[] }): Promise<ToolResult> {
+  const { ids } = args;
   const papers = await getPaperById(ids);
 
   if (papers.length === 0) {
@@ -55,25 +41,12 @@ export async function handleGetPaper(
 }
 
 // --- get_paper_pdf_url ---
-export const getPaperPdfUrlTool = {
-  name: "get_paper_pdf_url",
-  description: "Get the direct PDF download URL for an arXiv paper",
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      id: {
-        type: "string",
-        description: "arXiv paper ID (e.g. '2301.07041')",
-      },
-    },
-    required: ["id"],
-  },
+export const getPaperPdfUrlShape = {
+  id: z.string().describe("arXiv paper ID (e.g. '2301.07041')"),
 };
 
-export async function handleGetPaperPdfUrl(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const id = args.id as string;
+export async function handleGetPaperPdfUrl(args: { id: string }): Promise<ToolResult> {
+  const { id } = args;
   // arXiv PDF URLs follow a predictable pattern
   const pdfUrl = `https://arxiv.org/pdf/${id}`;
   return textResult(pdfUrl);
