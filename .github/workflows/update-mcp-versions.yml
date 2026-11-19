@@ -26,9 +26,6 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Install
-        run: npm ci --ignore-scripts
-
       - name: Sync @modelcontextprotocol/sdk across workspaces
         run: node scripts/sync-sdk.mjs
 
@@ -39,8 +36,8 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           branch: deps/update-mcp-versions
-          commit-message: "chore(deps): update @modelcontextprotocol/* to latest"
-          title: "chore(deps): update @modelcontextprotocol/* to latest"
+          commit-message: "chore(deps): update @modelcontextprotocol/sdk to latest"
+          title: "chore(deps): update @modelcontextprotocol/sdk to latest"
           body: |
             Automated update of `@modelcontextprotocol/sdk` across all npm workspaces (`node scripts/sync-sdk.mjs` + root lockfile refresh).
             Please review and run CI before merging.
