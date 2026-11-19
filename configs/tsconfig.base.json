@@ -1,15 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ES2023",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
-  }
+  "//": "Compatibility shim: the shared base now lives at the repo root (tsconfig.base.json). Kept for git-ignored vendored clones under mcp_servers/ that still extend this path.",
+  "extends": "../tsconfig.base.json"
 }

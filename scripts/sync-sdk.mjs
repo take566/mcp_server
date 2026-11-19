@@ -20,11 +20,10 @@
  *   node scripts/sync-sdk.mjs --dry-run               # preview changes
  */
 
-import { readdir, readFile, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
-const SERVERS_DIR = join(ROOT, "mcp_servers");
 const SDK_PACKAGE = "@modelcontextprotocol/sdk";
 
 // ---------------------------------------------------------------------------
@@ -45,9 +44,7 @@ async function fetchLatestVersion(packageName) {
   const url = `https://registry.npmjs.org/${packageName}/latest`;
   const resp = await fetch(url);
   if (!resp.ok) {
-    throw new Error(
-      `Failed to fetch latest version of ${packageName}: ${resp.status} ${resp.statusText}`
-    );
+    throw new Error(`Failed to fetch latest version of ${packageName}: ${resp.status} ${resp.statusText}`);
   }
   const data = await resp.json();
   return data.version;
@@ -94,11 +91,24 @@ async function main() {
     console.log();
   }
 
-  // Scan servers
-  const entries = await readdir(SERVERS_DIR, { withFileTypes: true });
-  const serverDirs = entries
-    .filter((e) => e.isDirectory())
-    .map((e) => ({ name: e.name, dir: join(SERVERS_DIR, e.name) }));
+  // Scan npm workspaces declared in the root package.json (vendored,
+  // git-ignored clones under mcp_servers/ are intentionally left alone)
+  const rootPkgPath = join(ROOT, "package.json");
+  const rootPkg = await readJson(rootPkgPath);
+  const serverDirs = (rootPkg?.workspaces ?? []).map((ws) => ({
+    name: basename(ws),
+    dir: join(ROOT, ws),
+  }));
+
+  // Keep the root `overrides` entry (forces transitive SDK copies, e.g. in
+  // @modelcontextprotocol/server-slack) in step with the direct dependencies
+  if (rootPkg?.overrides?.[SDK_PACKAGE] && rootPkg.overrides[SDK_PACKAGE] !== targetVersion) {
+    console.log(`Root overrides: ${rootPkg.overrides[SDK_PACKAGE]} -> ${targetVersion}${dryRun ? " (dry run)" : ""}\n`);
+    if (!dryRun) {
+      rootPkg.overrides[SDK_PACKAGE] = targetVersion;
+      await writeJson(rootPkgPath, rootPkg);
+    }
+  }
 
   const changes = [];
   const skipped = [];
@@ -150,23 +160,11 @@ async function main() {
   console.log("=== Results ===\n");
 
   if (changes.length > 0) {
-    console.log(
-      `${dryRun ? "Would update" : "Updated"} ${changes.length} server(s):\n`
-    );
-    console.log(
-      "Server".padEnd(30) +
-        "Section".padEnd(20) +
-        "Before".padEnd(16) +
-        "After"
-    );
+    console.log(`${dryRun ? "Would update" : "Updated"} ${changes.length} server(s):\n`);
+    console.log("Server".padEnd(30) + "Section".padEnd(20) + "Before".padEnd(16) + "After");
     console.log("-".repeat(80));
     for (const c of changes) {
-      console.log(
-        c.name.padEnd(30) +
-          c.section.padEnd(20) +
-          c.oldVersion.padEnd(16) +
-          targetVersion
-      );
+      console.log(c.name.padEnd(30) + c.section.padEnd(20) + c.oldVersion.padEnd(16) + targetVersion);
     }
     console.log();
   }
@@ -190,7 +188,7 @@ async function main() {
   // Summary line
   const total = changes.length + unchanged.length + skipped.length;
   console.log(
-    `Total: ${total} | ${dryRun ? "Would update" : "Updated"}: ${changes.length} | Unchanged: ${unchanged.length} | Skipped: ${skipped.length}`
+    `Total: ${total} | ${dryRun ? "Would update" : "Updated"}: ${changes.length} | Unchanged: ${unchanged.length} | Skipped: ${skipped.length}`,
   );
 
   if (dryRun && changes.length > 0) {
@@ -198,9 +196,7 @@ async function main() {
   }
 
   if (!dryRun && changes.length > 0) {
-    console.log(
-      "\nNote: Run the appropriate install command in each updated server to update lockfiles."
-    );
+    console.log("\nNote: Run `npm install` at the repository root to update package-lock.json.");
   }
 }
 

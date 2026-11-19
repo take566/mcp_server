@@ -1,4 +1,6 @@
 {
+  "name": "notion-mcp-server",
+  "private": true,
   "scripts": {
     "build": "echo \"passthrough wrapper: no build needed\""
   },
