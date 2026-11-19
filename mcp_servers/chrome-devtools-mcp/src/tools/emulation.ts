@@ -1,188 +1,159 @@
+import { z } from "zod";
 import { browserManager } from "../browser-manager.js";
-import { textResult, type ToolResult } from "../types.js";
+import { defineTool, textResult } from "../types.js";
 
-// --- emulate ---
-export const emulateTool = {
+export const emulateTool = defineTool({
   name: "emulate",
   description: "Emulate device/network conditions, geolocation, user agent, or media features",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      viewport: {
-        type: "object",
-        properties: {
-          width: { type: "number" },
-          height: { type: "number" },
-          deviceScaleFactor: { type: "number" },
-          isMobile: { type: "boolean" },
-          hasTouch: { type: "boolean" },
-        },
-        description: "Viewport dimensions and device flags",
-      },
-      userAgent: { type: "string", description: "User agent string" },
-      geolocation: {
-        type: "object",
-        properties: {
-          latitude: { type: "number" },
-          longitude: { type: "number" },
-          accuracy: { type: "number" },
-        },
-        description: "Geolocation coordinates",
-      },
-      colorScheme: {
-        type: "string",
-        enum: ["light", "dark", "no-preference"],
-        description: "Preferred color scheme",
-      },
-      cpuThrottling: { type: "number", description: "CPU throttling rate (1 = no throttle, 4 = 4x slowdown)" },
-      networkConditions: {
-        type: "object",
-        properties: {
-          offline: { type: "boolean" },
-          downloadThroughput: { type: "number", description: "bytes/s" },
-          uploadThroughput: { type: "number", description: "bytes/s" },
-          latency: { type: "number", description: "ms" },
-        },
-        description: "Network throttling conditions",
-      },
-    },
+    viewport: z
+      .object({
+        width: z.number().optional(),
+        height: z.number().optional(),
+        deviceScaleFactor: z.number().optional(),
+        isMobile: z.boolean().optional(),
+        hasTouch: z.boolean().optional(),
+      })
+      .optional()
+      .describe("Viewport dimensions and device flags"),
+    userAgent: z.string().optional().describe("User agent string"),
+    geolocation: z
+      .object({
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+        accuracy: z.number().optional(),
+      })
+      .optional()
+      .describe("Geolocation coordinates"),
+    colorScheme: z
+      .enum(["light", "dark", "no-preference"])
+      .optional()
+      .describe("Preferred color scheme"),
+    cpuThrottling: z
+      .number()
+      .optional()
+      .describe("CPU throttling rate (1 = no throttle, 4 = 4x slowdown)"),
+    networkConditions: z
+      .object({
+        offline: z.boolean().optional(),
+        downloadThroughput: z.number().optional().describe("bytes/s"),
+        uploadThroughput: z.number().optional().describe("bytes/s"),
+        latency: z.number().optional().describe("ms"),
+      })
+      .optional()
+      .describe("Network throttling conditions"),
   },
-};
+  handler: async ({ viewport, userAgent, geolocation, colorScheme, cpuThrottling, networkConditions }) => {
+    if (viewport && (viewport.width == null || viewport.height == null)) {
+      throw new Error("viewport requires both width and height.");
+    }
+    if (geolocation && (geolocation.latitude == null || geolocation.longitude == null)) {
+      throw new Error("geolocation requires both latitude and longitude.");
+    }
 
-export async function handleEmulate(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const applied: string[] = [];
+    const page = await browserManager.getSelectedPage();
+    const applied: string[] = [];
 
-  if (args.viewport) {
-    const vp = args.viewport as {
-      width: number;
-      height: number;
-      deviceScaleFactor?: number;
-      isMobile?: boolean;
-      hasTouch?: boolean;
-    };
-    await page.setViewport({
-      width: vp.width,
-      height: vp.height,
-      deviceScaleFactor: vp.deviceScaleFactor ?? 1,
-      isMobile: vp.isMobile ?? false,
-      hasTouch: vp.hasTouch ?? false,
-    });
-    applied.push(`viewport: ${vp.width}x${vp.height}`);
-  }
+    if (viewport?.width != null && viewport.height != null) {
+      await page.setViewport({
+        width: viewport.width,
+        height: viewport.height,
+        deviceScaleFactor: viewport.deviceScaleFactor ?? 1,
+        isMobile: viewport.isMobile ?? false,
+        hasTouch: viewport.hasTouch ?? false,
+      });
+      applied.push(`viewport: ${viewport.width}x${viewport.height}`);
+    }
 
-  if (args.userAgent) {
-    await page.setUserAgent(args.userAgent as string);
-    applied.push("userAgent");
-  }
+    if (userAgent) {
+      await page.setUserAgent(userAgent);
+      applied.push("userAgent");
+    }
 
-  if (args.geolocation) {
-    const geo = args.geolocation as { latitude: number; longitude: number; accuracy?: number };
-    await page.setGeolocation(geo);
-    applied.push(`geolocation: ${geo.latitude},${geo.longitude}`);
-  }
+    if (geolocation?.latitude != null && geolocation.longitude != null) {
+      await page.setGeolocation({
+        latitude: geolocation.latitude,
+        longitude: geolocation.longitude,
+        accuracy: geolocation.accuracy,
+      });
+      applied.push(`geolocation: ${geolocation.latitude},${geolocation.longitude}`);
+    }
 
-  if (args.colorScheme) {
-    await page.emulateMediaFeatures([
-      { name: "prefers-color-scheme", value: args.colorScheme as string },
-    ]);
-    applied.push(`colorScheme: ${args.colorScheme}`);
-  }
+    if (colorScheme) {
+      await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: colorScheme }]);
+      applied.push(`colorScheme: ${colorScheme}`);
+    }
 
-  if (args.cpuThrottling) {
-    await page.emulateCPUThrottling(args.cpuThrottling as number);
-    applied.push(`cpuThrottling: ${args.cpuThrottling}x`);
-  }
+    if (cpuThrottling) {
+      await page.emulateCPUThrottling(cpuThrottling);
+      applied.push(`cpuThrottling: ${cpuThrottling}x`);
+    }
 
-  if (args.networkConditions) {
-    const nc = args.networkConditions as {
-      offline?: boolean;
-      downloadThroughput?: number;
-      uploadThroughput?: number;
-      latency?: number;
-    };
-    const client = await page.createCDPSession();
-    await client.send("Network.emulateNetworkConditions", {
-      offline: nc.offline ?? false,
-      downloadThroughput: nc.downloadThroughput ?? -1,
-      uploadThroughput: nc.uploadThroughput ?? -1,
-      latency: nc.latency ?? 0,
-    });
-    await client.detach();
-    applied.push("networkConditions");
-  }
+    if (networkConditions) {
+      const client = await page.createCDPSession();
+      try {
+        await client.send("Network.emulateNetworkConditions", {
+          offline: networkConditions.offline ?? false,
+          downloadThroughput: networkConditions.downloadThroughput ?? -1,
+          uploadThroughput: networkConditions.uploadThroughput ?? -1,
+          latency: networkConditions.latency ?? 0,
+        });
+      } finally {
+        await client.detach();
+      }
+      applied.push("networkConditions");
+    }
 
-  return textResult(`Emulation applied: ${applied.join(", ") || "nothing"}`);
-}
+    return textResult(`Emulation applied: ${applied.join(", ") || "nothing"}`);
+  },
+});
 
-// --- resize_page ---
-export const resizePageTool = {
+export const resizePageTool = defineTool({
   name: "resize_page",
   description: "Resize the browser viewport",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      width: { type: "number", description: "Viewport width in pixels" },
-      height: { type: "number", description: "Viewport height in pixels" },
-    },
-    required: ["width", "height"],
+    width: z.number().describe("Viewport width in pixels"),
+    height: z.number().describe("Viewport height in pixels"),
   },
-};
+  handler: async ({ width, height }) => {
+    const page = await browserManager.getSelectedPage();
+    await page.setViewport({ width, height });
+    return textResult(`Viewport resized to ${width}x${height}`);
+  },
+});
 
-export async function handleResizePage(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  await page.setViewport({
-    width: args.width as number,
-    height: args.height as number,
-  });
-  return textResult(`Viewport resized to ${args.width}x${args.height}`);
-}
-
-// --- wait_for ---
-export const waitForTool = {
+export const waitForTool = defineTool({
   name: "wait_for",
   description: "Wait for a CSS selector, XPath, or navigation event",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      selector: { type: "string", description: "CSS selector to wait for" },
-      xpath: { type: "string", description: "XPath expression to wait for" },
-      navigation: { type: "boolean", description: "Wait for next navigation" },
-      timeout: { type: "number", description: "Timeout in milliseconds (default: 30000)" },
-      visible: { type: "boolean", description: "Wait for element to be visible" },
-      hidden: { type: "boolean", description: "Wait for element to be hidden" },
-    },
+    selector: z.string().optional().describe("CSS selector to wait for"),
+    xpath: z.string().optional().describe("XPath expression to wait for"),
+    navigation: z.boolean().optional().describe("Wait for next navigation"),
+    timeout: z.number().optional().describe("Timeout in milliseconds (default: 30000)"),
+    visible: z.boolean().optional().describe("Wait for element to be visible"),
+    hidden: z.boolean().optional().describe("Wait for element to be hidden"),
   },
-};
+  handler: async ({ selector, xpath, navigation, timeout: timeoutArg, visible, hidden }) => {
+    const page = await browserManager.getSelectedPage();
+    const timeout = timeoutArg ?? 30000;
 
-export async function handleWaitFor(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const timeout = (args.timeout as number) ?? 30000;
+    if (navigation) {
+      await page.waitForNavigation({ timeout });
+      return textResult(`Navigation complete: ${page.url()}`);
+    }
 
-  if (args.navigation) {
-    await page.waitForNavigation({ timeout });
-    return textResult(`Navigation complete: ${page.url()}`);
-  }
+    if (selector) {
+      await page.waitForSelector(selector, { timeout, visible, hidden });
+      return textResult(`Element found: ${selector}`);
+    }
 
-  if (args.selector) {
-    await page.waitForSelector(args.selector as string, {
-      timeout,
-      visible: args.visible as boolean | undefined,
-      hidden: args.hidden as boolean | undefined,
-    });
-    return textResult(`Element found: ${args.selector}`);
-  }
+    if (xpath) {
+      await page.waitForSelector(`::-p-xpath(${xpath})`, { timeout });
+      return textResult(`XPath matched: ${xpath}`);
+    }
 
-  if (args.xpath) {
-    await page.waitForSelector(`::-p-xpath(${args.xpath})`, { timeout });
-    return textResult(`XPath matched: ${args.xpath}`);
-  }
+    return textResult("No wait condition specified. Provide selector, xpath, or navigation.");
+  },
+});
 
-  return textResult("No wait condition specified. Provide selector, xpath, or navigation.");
-}
+export const emulationTools = [emulateTool, resizePageTool, waitForTool];

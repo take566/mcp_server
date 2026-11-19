@@ -1,119 +1,101 @@
 import { writeFile } from "node:fs/promises";
+import { z } from "zod";
 import { browserManager } from "../browser-manager.js";
-import { takeSnapshot } from "../uid-resolver.js";
-import { textResult, imageResult, type ToolResult } from "../types.js";
+import { resolveUid, takeSnapshot } from "../uid-resolver.js";
+import { defineTool, imageResult, textResult } from "../types.js";
 
-// --- take_screenshot ---
-export const takeScreenshotTool = {
+export const takeScreenshotTool = defineTool({
   name: "take_screenshot",
   description: "Take a screenshot of the current page or a specific element",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      uid: { type: "string", description: "Element UID to screenshot (omit for full page)" },
-      fullPage: { type: "boolean", description: "Capture full scrollable page" },
-      format: { type: "string", enum: ["png", "jpeg", "webp"], description: "Image format (default: png)" },
-      quality: { type: "number", description: "Quality for jpeg/webp (0-100)" },
-      filePath: { type: "string", description: "Save screenshot to file path" },
-    },
+    uid: z.string().optional().describe("Element UID to screenshot (omit for full page)"),
+    fullPage: z.boolean().optional().describe("Capture full scrollable page"),
+    format: z.enum(["png", "jpeg", "webp"]).optional().describe("Image format (default: png)"),
+    quality: z.number().optional().describe("Quality for jpeg/webp (0-100)"),
+    filePath: z.string().optional().describe("Save screenshot to file path"),
   },
-};
+  handler: async ({ uid, fullPage, format: fmt, quality, filePath }) => {
+    const page = await browserManager.getSelectedPage();
+    const format = fmt ?? "png";
 
-export async function handleTakeScreenshot(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const format = (args.format as "png" | "jpeg" | "webp") ?? "png";
+    const options: Record<string, unknown> = {
+      type: format,
+      fullPage: !!fullPage,
+      encoding: "base64" as const,
+    };
 
-  const options: Record<string, unknown> = {
-    type: format,
-    fullPage: !!args.fullPage,
-    encoding: "base64" as const,
-  };
+    if (quality != null && format !== "png") {
+      options.quality = quality;
+    }
 
-  if (args.quality != null && format !== "png") {
-    options.quality = args.quality as number;
-  }
+    let base64: string;
 
-  let base64: string;
+    if (uid) {
+      const element = await resolveUid(page, uid);
+      base64 = (await element.screenshot(options)) as unknown as string;
+    } else {
+      base64 = (await page.screenshot(options)) as unknown as string;
+    }
 
-  if (args.uid) {
-    const { resolveUid } = await import("../uid-resolver.js");
-    const element = await resolveUid(page, args.uid as string);
-    base64 = (await element.screenshot(options)) as unknown as string;
-  } else {
-    base64 = (await page.screenshot(options)) as unknown as string;
-  }
+    if (filePath) {
+      await writeFile(filePath, Buffer.from(base64, "base64"));
+      return textResult(`Screenshot saved to ${filePath}`);
+    }
 
-  if (args.filePath) {
-    await writeFile(args.filePath as string, Buffer.from(base64, "base64"));
-    return textResult(`Screenshot saved to ${args.filePath}`);
-  }
+    const mimeType =
+      format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
+    return imageResult(base64, mimeType);
+  },
+});
 
-  const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
-  return imageResult(base64, mimeType);
-}
-
-// --- take_snapshot ---
-export const takeSnapshotTool = {
+export const takeSnapshotTool = defineTool({
   name: "take_snapshot",
-  description: "Take an accessibility tree snapshot of the current page. Returns a tree of elements with UIDs that can be used with interaction tools.",
+  description:
+    "Take an accessibility tree snapshot of the current page. Returns a tree of elements with UIDs that can be used with interaction tools.",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      verbose: { type: "boolean", description: "Include additional details like descriptions" },
-      filePath: { type: "string", description: "Save snapshot to file path" },
-    },
+    verbose: z.boolean().optional().describe("Include additional details like descriptions"),
+    filePath: z.string().optional().describe("Save snapshot to file path"),
   },
-};
+  handler: async ({ verbose, filePath }) => {
+    const page = await browserManager.getSelectedPage();
+    const snapshot = await takeSnapshot(page, !!verbose);
 
-export async function handleTakeSnapshot(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const snapshot = await takeSnapshot(page, !!args.verbose);
+    if (filePath) {
+      await writeFile(filePath, snapshot, "utf-8");
+      return textResult(`Snapshot saved to ${filePath}`);
+    }
 
-  if (args.filePath) {
-    await writeFile(args.filePath as string, snapshot, "utf-8");
-    return textResult(`Snapshot saved to ${args.filePath}`);
-  }
+    return textResult(snapshot);
+  },
+});
 
-  return textResult(snapshot);
-}
-
-// --- take_memory_snapshot ---
-export const takeMemorySnapshotTool = {
+export const takeMemorySnapshotTool = defineTool({
   name: "take_memory_snapshot",
   description: "Take a heap memory snapshot (V8 heap profile) and save to file",
   inputSchema: {
-    type: "object" as const,
-    properties: {
-      filePath: { type: "string", description: "File path to save the heap snapshot (.heapsnapshot)" },
-    },
-    required: ["filePath"],
+    filePath: z.string().describe("File path to save the heap snapshot (.heapsnapshot)"),
   },
-};
+  handler: async ({ filePath }) => {
+    const page = await browserManager.getSelectedPage();
+    const client = await page.createCDPSession();
 
-export async function handleTakeMemorySnapshot(
-  args: Record<string, unknown>,
-): Promise<ToolResult> {
-  const page = await browserManager.getSelectedPage();
-  const client = await page.createCDPSession();
+    try {
+      const chunks: string[] = [];
+      client.on("HeapProfiler.addHeapSnapshotChunk", (params: { chunk: string }) => {
+        chunks.push(params.chunk);
+      });
 
-  try {
-    const chunks: string[] = [];
-    client.on("HeapProfiler.addHeapSnapshotChunk", (params: { chunk: string }) => {
-      chunks.push(params.chunk);
-    });
+      await client.send("HeapProfiler.takeHeapSnapshot", { reportProgress: false });
+      const snapshot = chunks.join("");
 
-    await client.send("HeapProfiler.takeHeapSnapshot", { reportProgress: false });
-    const snapshot = chunks.join("");
+      await writeFile(filePath, snapshot, "utf-8");
+      return textResult(
+        `Heap snapshot saved to ${filePath} (${(snapshot.length / 1024 / 1024).toFixed(1)}MB)`,
+      );
+    } finally {
+      await client.detach();
+    }
+  },
+});
 
-    await writeFile(args.filePath as string, snapshot, "utf-8");
-    return textResult(
-      `Heap snapshot saved to ${args.filePath} (${(snapshot.length / 1024 / 1024).toFixed(1)}MB)`,
-    );
-  } finally {
-    await client.detach();
-  }
-}
+export const inspectionTools = [takeScreenshotTool, takeSnapshotTool, takeMemorySnapshotTool];
