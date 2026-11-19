@@ -48,11 +48,19 @@ const NODE_VALUE_FLAGS = new Set([
   "--experimental-loader",
   "-C",
   "--conditions",
+  "--env-file",
+  "--env-file-if-exists",
+  "--disable-warning",
+  "--title",
+  "--max-old-space-size-percentage",
 ]);
+const NODE_EVAL_FLAGS = new Set(["-e", "--eval", "-p", "--print", "-pe"]);
+const INLINE_EVAL = Symbol("inline-eval");
 
-/** First positional argument of `node`, skipping flags and their values. */
+/** First positional argument of `node`, skipping flags and their values; INLINE_EVAL for -e/-p. */
 function findNodeScript(args) {
   for (let i = 0; i < args.length; i++) {
+    if (NODE_EVAL_FLAGS.has(args[i])) return INLINE_EVAL;
     if (NODE_VALUE_FLAGS.has(args[i])) i++;
     else if (!args[i].startsWith("-")) return args[i];
   }
@@ -101,6 +109,7 @@ export function verifyMcpConfig(file, { ci = false, env = process.env } = {}) {
 
     if (/^node(\.exe)?$/i.test(s.command)) {
       const script = findNodeScript(args);
+      if (script === INLINE_EVAL) continue;
       if (!script) {
         errors.push(`[${name}] node server has no script argument`);
         continue;

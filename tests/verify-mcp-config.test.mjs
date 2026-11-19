@@ -44,6 +44,19 @@ describe("verify-mcp-config", () => {
     expect(r.errors).toEqual([]);
   });
 
+  it("skips inline eval and skips --env-file values when locating the script", () => {
+    const real = join(import.meta.dirname, "verify-mcp-config.test.mjs");
+    const r = verifyMcpConfig(
+      tmpConfig({
+        a: { command: "node", args: ["-e", "console.log(1)"] },
+        b: { command: "node", args: ["--env-file", "a.env", real] },
+      }),
+    );
+    expect(r.errors).toEqual([]);
+    const bad = verifyMcpConfig(tmpConfig({ c: { command: "node", args: ["--env-file", "a.env", missingScript] } }));
+    expect(bad.errors.length).toBe(1);
+  });
+
   it("errors on invalid JSON", () => {
     expect(verifyMcpConfig(tmpConfig("{ nope")).errors.length).toBe(1);
   });
