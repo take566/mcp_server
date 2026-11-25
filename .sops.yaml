@@ -5,4 +5,4 @@
 # The age PRIVATE key is never committed.
 creation_rules:
   - path_regex: infra/mcp/secrets\.sops\.yaml$
-    age: age1REPLACE_WITH_YOUR_AGE_PUBLIC_KEY
+    age: age1sd470g37fzt6c5mswglv47cgye6685vqmztmzf5wt74q6jxm8fnqvm8tx3

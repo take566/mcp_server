@@ -17,7 +17,7 @@ version: 1
 
 oauth:
   # Web-application OAuth client created with "Use this client for an AI-powered agent" (is_agentic).
-  client_id: YOUR_CLIENT_ID.apps.googleusercontent.com
+  client_id: 391395785512-lt1m275311bh0s79mnlkkk87cacm5gi7.apps.googleusercontent.com
   # Fixed local callback port (Claude Code oauth.callbackPort / Codex mcp_oauth_callback_port /
   # Gemini redirectUri). Register the matching redirect URIs on the OAuth client (see infra/README.md).
   callback_port: 8765
