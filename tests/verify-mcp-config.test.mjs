@@ -57,6 +57,32 @@ describe("verify-mcp-config", () => {
     expect(bad.errors.length).toBe(1);
   });
 
+  it("errors on non-https remote servers", () => {
+    const r = verifyMcpConfig(tmpConfig({ x: { type: "http", url: "http://example.com/mcp" } }));
+    expect(r.errors.length).toBe(1);
+    expect(r.errors[0]).toMatch(/https/);
+    expect(verifyMcpConfig(tmpConfig({ x: { type: "http", url: "not a url" } })).errors.length).toBe(1);
+  });
+
+  it("validates the oauth shape of remote servers and forbids inline client secrets", () => {
+    const ok = {
+      type: "http",
+      url: "https://gmailmcp.googleapis.com/mcp/v1",
+      oauth: { clientId: "x.apps.googleusercontent.com", callbackPort: 8765, scopes: "a b" },
+    };
+    expect(verifyMcpConfig(tmpConfig({ ok })).errors).toEqual([]);
+    const bad = (oauth) => verifyMcpConfig(tmpConfig({ b: { ...ok, oauth } })).errors;
+    expect(bad("nope").length).toBe(1);
+    expect(bad({ ...ok.oauth, clientId: "" }).length).toBe(1);
+    expect(bad({ ...ok.oauth, callbackPort: "8765" }).length).toBe(1);
+    expect(bad({ ...ok.oauth, callbackPort: 70000 }).length).toBe(1);
+    expect(bad({ ...ok.oauth, callbackPort: 80 }).length).toBe(1); // aligned with apply.mjs: 1024-65535
+    expect(bad({ ...ok.oauth, scopes: ["a", "b"] }).length).toBe(1);
+    const leak = bad({ ...ok.oauth, clientSecret: "GOCSPX-supersecretvalue" });
+    expect(leak.length).toBe(1);
+    expect(leak[0]).not.toContain("GOCSPX-supersecretvalue");
+  });
+
   it("errors on invalid JSON", () => {
     expect(verifyMcpConfig(tmpConfig("{ nope")).errors.length).toBe(1);
   });

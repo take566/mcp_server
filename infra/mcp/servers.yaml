@@ -1,0 +1,110 @@
+# Google official Workspace MCP servers — single source of truth.
+#
+# Consumers:
+#   - infra/mcp/apply.mjs        -> .mcp.json (Claude Code), configs/codex/google-workspace.toml (snippet only,
+#                                   ~/.codex is never written), configs/connectors.md (Claude Desktop),
+#                                   ~/.gemini/settings.json (with --home)
+#     While oauth.client_id is the placeholder below, NO client entries are emitted. Set it, then run --apply.
+#   - infra/terraform/gcp        -> google_project_service (gcp_services of enabled servers)
+#
+# Rules (enforced by apply.mjs):
+#   - server keys MUST start with "google-"; apply.mjs only ever touches "google-*" entries.
+#   - url MUST be https.
+#   - client_id is NOT secret and lives here. client_secret lives ONLY in
+#     infra/mcp/secrets.sops.yaml (SOPS+age) and is injected via env var at login/run time.
+#   - scopes are readonly-first. Widen deliberately, per server.
+version: 1
+
+oauth:
+  # Web-application OAuth client created with "Use this client for an AI-powered agent" (is_agentic).
+  client_id: YOUR_CLIENT_ID.apps.googleusercontent.com
+  # Fixed local callback port (Claude Code oauth.callbackPort / Codex mcp_oauth_callback_port /
+  # Gemini redirectUri). Register the matching redirect URIs on the OAuth client (see infra/README.md).
+  callback_port: 8765
+  # Env var that carries the client secret at runtime (never written to any file or argv).
+  client_secret_env: GOOGLE_MCP_CLIENT_SECRET
+
+servers:
+  google-gmail:
+    enabled: true
+    url: https://gmailmcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/gmail.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [gmail.googleapis.com, gmailmcp.googleapis.com]
+
+  google-drive:
+    enabled: true
+    url: https://drivemcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/drive.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [drive.googleapis.com, drivemcp.googleapis.com]
+
+  google-docs:
+    enabled: true
+    url: https://docsmcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/documents.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [docs.googleapis.com, docsmcp.googleapis.com]
+
+  google-sheets:
+    enabled: true
+    url: https://sheetsmcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/spreadsheets.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [sheets.googleapis.com, sheetsmcp.googleapis.com]
+
+  google-calendar:
+    enabled: true
+    url: https://calendarmcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/calendar.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [calendar-json.googleapis.com, calendarmcp.googleapis.com]
+
+  # --- available, disabled by default -------------------------------------
+  google-slides:
+    enabled: false
+    url: https://slidesmcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/presentations.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [slides.googleapis.com, slidesmcp.googleapis.com]
+
+  google-chat:
+    enabled: false
+    url: https://chatmcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/chat.spaces.readonly
+      - https://www.googleapis.com/auth/chat.messages.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [chat.googleapis.com, chatmcp.googleapis.com]
+
+  google-classroom:
+    enabled: false
+    url: https://classroommcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/classroom.courses.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [classroom.googleapis.com, classroommcp.googleapis.com]
+
+  google-people:
+    enabled: false
+    url: https://people.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/contacts.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [people.googleapis.com]
+
+  google-workspace:
+    enabled: false
+    url: https://workspacemcp.googleapis.com/mcp/v1
+    scopes:
+      - https://www.googleapis.com/auth/drive.readonly
+      - https://www.googleapis.com/auth/gmail.readonly
+      - https://www.googleapis.com/auth/calendar.readonly
+    targets: [claude-code, codex, gemini, claude-desktop]
+    gcp_services: [workspacemcp.googleapis.com]
