@@ -82,6 +82,51 @@
         "NO_BROWSER": "true",
         "ENABLE_TOOL_SEARCH": "true"
       }
+    },
+    "google-calendar": {
+      "type": "http",
+      "url": "https://calendarmcp.googleapis.com/mcp/v1",
+      "oauth": {
+        "clientId": "391395785512-lt1m275311bh0s79mnlkkk87cacm5gi7.apps.googleusercontent.com",
+        "callbackPort": 8765,
+        "scopes": "https://www.googleapis.com/auth/calendar.readonly"
+      }
+    },
+    "google-docs": {
+      "type": "http",
+      "url": "https://docsmcp.googleapis.com/mcp/v1",
+      "oauth": {
+        "clientId": "391395785512-lt1m275311bh0s79mnlkkk87cacm5gi7.apps.googleusercontent.com",
+        "callbackPort": 8765,
+        "scopes": "https://www.googleapis.com/auth/documents.readonly"
+      }
+    },
+    "google-drive": {
+      "type": "http",
+      "url": "https://drivemcp.googleapis.com/mcp/v1",
+      "oauth": {
+        "clientId": "391395785512-lt1m275311bh0s79mnlkkk87cacm5gi7.apps.googleusercontent.com",
+        "callbackPort": 8765,
+        "scopes": "https://www.googleapis.com/auth/drive.readonly"
+      }
+    },
+    "google-gmail": {
+      "type": "http",
+      "url": "https://gmailmcp.googleapis.com/mcp/v1",
+      "oauth": {
+        "clientId": "391395785512-lt1m275311bh0s79mnlkkk87cacm5gi7.apps.googleusercontent.com",
+        "callbackPort": 8765,
+        "scopes": "https://www.googleapis.com/auth/gmail.readonly"
+      }
+    },
+    "google-sheets": {
+      "type": "http",
+      "url": "https://sheetsmcp.googleapis.com/mcp/v1",
+      "oauth": {
+        "clientId": "391395785512-lt1m275311bh0s79mnlkkk87cacm5gi7.apps.googleusercontent.com",
+        "callbackPort": 8765,
+        "scopes": "https://www.googleapis.com/auth/spreadsheets.readonly"
+      }
     }
   }
 }

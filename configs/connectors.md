@@ -4,7 +4,7 @@
 Connectors are account-level (claude.ai). They are added manually in Claude Desktop or claude.ai under
 **Settings > Connectors > Add custom connector**, once per account (not per OS).
 
-- OAuth Client ID: `YOUR_CLIENT_ID.apps.googleusercontent.com`
+- OAuth Client ID: `391395785512-lt1m275311bh0s79mnlkkk87cacm5gi7.apps.googleusercontent.com`
 - OAuth Client Secret: paste from `sops -d infra/mcp/secrets.sops.yaml` (key `GOOGLE_MCP_CLIENT_SECRET`) directly into the dialog; never save it to a file.
 - Redirect URI that must be registered on the OAuth client: `https://claude.ai/api/mcp/auth_callback`
 
