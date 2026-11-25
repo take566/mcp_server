@@ -3,24 +3,32 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '**/*.svg'
-      - '**/*.png'
-      - '.gitignore'
-      - '**/.gitignore'
+    # `paths` (not paths-ignore) so configs/** can be re-included: the generated
+    # configs/connectors.md must still trigger the manifest drift check. Last match wins.
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!LICENSE'
+      - '!**/*.svg'
+      - '!**/*.png'
+      - '!.gitignore'
+      - '!**/.gitignore'
+      - 'configs/**'
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '**/*.svg'
-      - '**/*.png'
-      - '.gitignore'
-      - '**/.gitignore'
+    # `paths` (not paths-ignore) so configs/** can be re-included: the generated
+    # configs/connectors.md must still trigger the manifest drift check. Last match wins.
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!LICENSE'
+      - '!**/*.svg'
+      - '!**/*.png'
+      - '!.gitignore'
+      - '!**/.gitignore'
+      - 'configs/**'
   workflow_dispatch:
 
 concurrency:
@@ -32,7 +40,7 @@ permissions:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Phase 1: Change Detection (Python only; Node workspaces always run)
+  # Phase 1: Change Detection (Python / Terraform; Node workspaces always run)
   # --------------------------------------------------------------------------
   changes:
     name: Detect Changes
@@ -43,6 +51,7 @@ jobs:
       pull-requests: read
     outputs:
       py_changed: ${{ steps.filter.outputs.py_changed }}
+      tf_changed: ${{ steps.filter.outputs.tf_changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,6 +73,14 @@ jobs:
             echo "py_changed=false" >> "$GITHUB_OUTPUT"
           fi
           echo "Python changed: $(grep py_changed "$GITHUB_OUTPUT" | cut -d= -f2)"
+
+          # Terraform reads infra/mcp/servers.yaml, so manifest changes also re-validate it.
+          if echo "$CHANGED" | grep -qE "^(infra/terraform/|infra/mcp/servers.yaml$|.github/workflows/ci.yml$)"; then
+            echo "tf_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tf_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Terraform changed: $(grep tf_changed "$GITHUB_OUTPUT" | cut -d= -f2)"
 
   # --------------------------------------------------------------------------
   # Phase 2a: Node workspaces (npm ci + typecheck + lint + test + build)
@@ -96,8 +113,39 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Google Workspace MCP manifest drift (google-* sections only)
+        run: node infra/mcp/apply.mjs --check
+
+      - name: Verify .mcp.json
+        run: node scripts/verify-mcp-config.mjs --ci
+
       - name: Build
         run: npm run build:all
+
+  # --------------------------------------------------------------------------
+  # Phase 2c: Terraform (infra/terraform/gcp) — static checks only, no credentials
+  # --------------------------------------------------------------------------
+  terraform:
+    name: Terraform [infra/terraform/gcp]
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.tf_changed == 'true'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.17.1"
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: terraform init (no backend)
+        run: terraform -chdir=infra/terraform/gcp init -backend=false -input=false
+
+      - name: terraform validate
+        run: terraform -chdir=infra/terraform/gcp validate
 
   # --------------------------------------------------------------------------
   # Phase 2b: Python Tools (lint + test)
@@ -148,7 +196,7 @@ jobs:
   ci-pass:
     name: CI Pass
     runs-on: ubuntu-latest
-    needs: [changes, node, python]
+    needs: [changes, node, terraform, python]
     if: always()
     timeout-minutes: 2
     steps:
@@ -164,6 +212,13 @@ jobs:
 
           if [ "$NODE_RESULT" != "success" ]; then
             echo "CI failed: Node workspaces got '${NODE_RESULT}'"
+            exit 1
+          fi
+          TF_RESULT="${{ needs.terraform.result }}"
+          echo "Terraform: ${TF_RESULT}"
+          # Terraform is skipped when infra/terraform/** and the manifest did not change
+          if [ "$TF_RESULT" != "success" ] && [ "$TF_RESULT" != "skipped" ]; then
+            echo "CI failed: Terraform got '${TF_RESULT}'"
             exit 1
           fi
           # Python may be skipped when no Python files changed

@@ -71,3 +71,12 @@ tools/llm-script/
 # Local install/build sinks
 .mcp-bin/
 /mcp-code-execution/
+
+# Google Workspace MCP IaC (infra/): never commit decrypted secrets or TF state
+.codex/*secret*
+*.tfstate
+*.tfstate.*
+.terraform/
+infra/mcp/secrets.yaml
+infra/mcp/*.dec.yaml
+infra/mcp/*.decrypted.*

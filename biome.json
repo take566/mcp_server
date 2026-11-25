@@ -8,6 +8,7 @@
   "files": {
     "includes": [
       "scripts/**/*.mjs",
+      "infra/**/*.mjs",
       "tests/**",
       "vitest.config.mjs",
       "biome.json",

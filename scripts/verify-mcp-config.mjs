@@ -67,6 +67,38 @@ function findNodeScript(args) {
   return undefined;
 }
 
+/** Remote (url) server checks: https only, and a well-formed Claude Code `oauth` block. Never echoes values. */
+function checkRemote(s) {
+  const errs = [];
+  let url;
+  try {
+    url = new URL(s.url);
+  } catch {
+    return ["remote url is not a valid URL"];
+  }
+  if (url.protocol !== "https:") errs.push(`remote url must be https (got ${url.protocol})`);
+  if (s.oauth === undefined) return errs;
+  const o = s.oauth;
+  if (!o || typeof o !== "object" || Array.isArray(o)) return [...errs, `"oauth" must be an object`];
+  if (o.clientId !== undefined && (typeof o.clientId !== "string" || !o.clientId)) {
+    errs.push(`"oauth.clientId" must be a non-empty string`);
+  }
+  if (
+    o.callbackPort !== undefined &&
+    !(Number.isInteger(o.callbackPort) && o.callbackPort >= 1024 && o.callbackPort <= 65535)
+  ) {
+    // same range as infra/mcp/apply.mjs (oauth.callback_port)
+    errs.push(`"oauth.callbackPort" must be an integer 1024-65535`);
+  }
+  if (o.scopes !== undefined && typeof o.scopes !== "string") {
+    errs.push(`"oauth.scopes" must be a single space-separated string`);
+  }
+  if (Object.keys(o).some((k) => /secret/i.test(k))) {
+    errs.push(`"oauth" must not contain a client secret (supply it at login via env var)`);
+  }
+  return errs;
+}
+
 /**
  * @param {string} file path to .mcp.json
  * @param {{ci?: boolean, env?: NodeJS.ProcessEnv}} [opts]
@@ -93,6 +125,7 @@ export function verifyMcpConfig(file, { ci = false, env = process.env } = {}) {
   for (const [name, s] of Object.entries(servers)) {
     if (s && typeof s === "object" && typeof s.url === "string" && !s.command) {
       info.push(`[${name}] remote server type=${s.type ?? "?"}`);
+      for (const e of checkRemote(s)) errors.push(`[${name}] ${e}`);
       continue;
     }
     if (!s || typeof s !== "object" || typeof s.command !== "string" || !s.command) {
